@@ -11,9 +11,12 @@ their also contains the converted files.
 
 
 how to use the converted files:
+
+```
 1 in pads, click File-library select a library.
 2 select Decals and click import button. select the files with .d.
 3 select Parts and click import button. select the files with .p.
+```
 
 NOTE:import one file to one library file. do not import all file into one library as the library has a component limit.
 
