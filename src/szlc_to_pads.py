@@ -246,6 +246,11 @@ def comp_save_by_tags():
 
 
 if __name__ == '__main__':
+
+    # szlc_to_pads_decl_list(['SMA-SMD_BWSMA-KE-P001', 'IND-SMD_L3.6-W2.9', 'SOT-363_L2.0-W1.3-P0.65-LS2.1-TL', 'SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR'])
+    szlc_to_pads_decl_list(['CAP-SMD_L7.3-W4.3-R-RD'])
+    sys.exit(0)
+
     comp_save_by_tags()
     sys.exit(0)
 
@@ -255,9 +260,6 @@ if __name__ == '__main__':
     lp_wrapper()
     lp.print_stats()
 
-    sys.exit(0)
-    # szlc_to_pads_decl_list(['SMA-SMD_BWSMA-KE-P001', 'IND-SMD_L3.6-W2.9', 'SOT-363_L2.0-W1.3-P0.65-LS2.1-TL', 'SOT-23-3_L2.9-W1.3-P1.90-LS2.4-BR'])
-    szlc_to_pads_decl_list(['CAP-SMD_L7.3-W4.3-R-RD'])
     sys.exit(0)
 
     lp = LineProfiler()

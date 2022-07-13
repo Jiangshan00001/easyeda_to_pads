@@ -1,5 +1,8 @@
 # coding:utf-8
 
+
+#easyeda format parse
+
 __author__ = "songjiangshan"
 __copyright__ = "Copyright (C) 2021 songjiangshan \n All Rights Reserved."
 __license__ = ""

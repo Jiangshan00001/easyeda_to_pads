@@ -1,5 +1,5 @@
 # coding:utf-8
-# 读取各个元件的封装
+# 从服务器 读取各个元件的封装
 
 __author__ = "songjiangshan"
 __copyright__ = "Copyright (C) 2021 songjiangshan \n All Rights Reserved."

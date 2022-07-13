@@ -7,6 +7,9 @@ __version__ = "1.0"
 
 
 class PadsAscii:
+    """
+    pads ascii format io
+    """
     def __init__(self):
         self.m_format = 'pcb_decals'
         self.m_pcb_decals = {}

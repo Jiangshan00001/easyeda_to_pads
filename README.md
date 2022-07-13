@@ -9,6 +9,27 @@ but, if you use pads for pcb. then the footprint need to converted to pads in or
 this is a convert program.
 their also contains the converted files.
 
+how to conver the decl from easyeda to pads format?
+
+
+```
+1 install requirements.txt using command:
+pip3 install -r requirements.txt
+2 run the script szlc_to_pads.py
+the 'CAP-SMD_L7.3-W4.3-R-RD' will be saved to out.d & out.p.
+change the decl in :
+if __name__ == '__main__':
+    szlc_to_pads_decl_list(['CAP-SMD_L7.3-W4.3-R-RD'])
+    sys.exit(0)
+
+the decl will change.
+'CAP-SMD_L7.3-W4.3-R-RD' is the decl name in easyeda.
+
+
+ 
+```
+
+
 
 how to use the converted files:
 
