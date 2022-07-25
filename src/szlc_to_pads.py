@@ -115,7 +115,7 @@ def pull_one_comp():
 from szlc_read import get_decl_list
 
 
-def szlc_to_pads_decl_list(decl_title_list):
+def szlc_to_pads_decl_list(decl_title_list, out_d='oud.d', out_p='out.p'):
     """
     通过封装名称的列表，导出封装
     :param title_list:
@@ -135,12 +135,12 @@ def szlc_to_pads_decl_list(decl_title_list):
 
         cnt += 1
 
-    f = open('out.d', 'w+')
+    f = open(out_d, 'w+')
     a.set_format('pcb_decals')
     f.write(a.dump())
     f.close()
 
-    f = open('out.p', 'w+')
+    f = open(out_p, 'w+')
     a.set_format('part_types')
     f.write(a.dump())
     f.close()

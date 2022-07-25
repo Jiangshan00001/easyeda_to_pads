@@ -15,21 +15,15 @@ how to conver the decl from easyeda to pads format?
 ```
 1 install requirements.txt using command:
 pip3 install -r requirements.txt
-2 run the script szlc_to_pads.py
-the 'CAP-SMD_L7.3-W4.3-R-RD' will be saved to out.d & out.p.
-change the decl in :
-if __name__ == '__main__':
-    szlc_to_pads_decl_list(['CAP-SMD_L7.3-W4.3-R-RD'])
-    sys.exit(0)
 
-the decl will change.
-'CAP-SMD_L7.3-W4.3-R-RD' is the decl name in easyeda.
-
-
- 
+2 run gui_qt.py
+3 input the footprint name, click search.
+4 click one of the compoment list
+5 click operation-to_pads. their will be one out.d file in the current directory.
+  
 ```
 
-
+![gui-qt](/doc/gui_qt.png)
 
 how to use the converted files:
 

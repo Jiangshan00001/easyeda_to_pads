@@ -12,8 +12,8 @@ class PadsAscii:
     """
     def __init__(self):
         self.m_format = 'pcb_decals'
-        self.m_pcb_decals = {}
-        self.m_pad_parts = {}
+        self.m_pcb_decals = {} # pcb封装
+        self.m_pad_parts = {}  # pcb parts
         self.TOP_LAYER = '1'
         self.BOTTOM_LAYER = '2'
         self.TOP_SILK_LAYER = '26'
@@ -126,7 +126,7 @@ class PadsAscii:
 
     def add_pcb_decal(self, name, unit, originx, originy, dt):
         """
-
+        添加一个封装
         :param name:User-defined decal name. Values can be up to 40 alphanumeric characters.
         :param unit: Can be either Imperial (mils) or Metric (mm), expressed as a single letter: I or M.
         :param originx: Coordinates of the symbol origin. Expressed in mils.
@@ -146,6 +146,7 @@ class PadsAscii:
     def add_txt(self, decl_name, text, x, y, rotation, layer, height, width, mirror, fontinfo, just=0, drwnum=0,
                 field=0):
         """
+        向指定的封装添加文本
         :param decl_name:
         :param text:Text string
                         Up to 255 characters, spaces allowed.
@@ -500,3 +501,7 @@ orientation.
 
         out_str += self.get_eof() + '\n'
         return out_str
+
+    def dump_pcb_decal_to_png(self):
+        pass
+

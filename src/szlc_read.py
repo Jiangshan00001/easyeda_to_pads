@@ -13,7 +13,7 @@ import datetime
 from szlc_read_list import get_comp_index
 import sys
 import time
-import rapidjson
+import json
 import zlib
 import urllib3
 
@@ -289,7 +289,7 @@ def get_one_decl(uuid, file_name_decl_gz='decl_20210612_gz.db'):
     return decl_one[0]
 
 
-def pull_and_save(comp_id, comp_uuid, file_name_comp_gz, file_name_decl_gz):
+def pull_and_save(comp_id, comp_uuid, file_name_comp_gz='comp_20210612_gz.db', file_name_decl_gz='decl_20210612_gz.db'):
     #update a comp
     data, time2 = lc_pull_comp_decl(comp_uuid)
 
