@@ -1,3 +1,21 @@
 
 src/.idea/*
 *.pyc
+src/comp_20210612_gz.db
+src/decl_20210612_gz.db
+src/easy_to_padsv1.py
+src/easyedav1.py
+src/out.d
+src/out.p
+src/pads_asciiv1.py
+src/test_decl.py
+src/test_pads_ascii.asc
+src/test_pads_ascii.pcb
+src/test_pads_ascii_boardoutline.asc
+src/test_pads_ascii_route1.asc
+src/tmp2.asc
+src/tmp3.asc
+src/usdx_export_test.asc
+src/usdx_export_to_padsv94.asc
+src/web_qt.py
+src/~$test_pads_ascii.pcb.inf

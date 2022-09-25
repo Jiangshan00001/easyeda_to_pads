@@ -24,8 +24,13 @@ def lc_pull_comp_decl(comp_uuid):
     url2 = 'https://lceda.cn/api/components/' + str(comp_uuid) + '?version=6.4.20.2&uuid=' + str(
         comp_uuid) + '&datastrid='
     t1 = time.time()
+    print('reading url:', url2)
     strhtml = requests.get(url2, verify=False)  # Get方式获取网页数据
     t2 = time.time()
+    # print('url2_ret:', strhtml.text)
+    f=open('test.json','w')
+    f.write(strhtml.text)
+    f.close()
     try:
         comp_list_ret = json.loads(strhtml.text)
     except Exception as e:

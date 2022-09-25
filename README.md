@@ -6,6 +6,42 @@ if you do some pcb and smt here:https://www.jlc.com/.
 then, their are some footprint created by easyeda that could match the smt.
 but, if you use pads for pcb. then the footprint need to converted to pads in order to use it.
 
+
+20220925：
+
+```
+1 install requirements.txt using command:
+pip3 install -r requirements.txt
+
+2 run web_qt.py
+3 open the pcb project in the browser.
+4 click export menu.
+5 save to one asc file.
+  
+```
+
+![web-qt](/doc/web_qt_use.gif.gif)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+----------------------
+the gui_qt.py is not functional for this version.
+if you need it, use the prev version or next version.
+
 this is a convert program.
 their also contains the converted files.
 

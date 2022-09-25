@@ -1,1 +1,5 @@
+pyqt6
+PyQt6-WebEngine
+requests
 pyqt5
+line_profiler

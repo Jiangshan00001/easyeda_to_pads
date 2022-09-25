@@ -11,10 +11,10 @@ import codecs
 
 import requests  # 导入requests包
 import json
-from pads_ascii import PadsAscii
+from pads_asciiv1 import PadsAscii
 from easyeda import EasyEda
 from szlc_read import get_comp_uuid_list, get_one_decl
-from easy_to_pads import easy_to_pads
+from easy_to_padsv1 import easy_to_pads
 import datetime
 from line_profiler import LineProfiler
 
