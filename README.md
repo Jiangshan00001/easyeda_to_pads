@@ -7,6 +7,7 @@ then, their are some footprint created by easyeda that could match the smt.
 but, if you use pads for pcb. then the footprint need to converted to pads in order to use it.
 
 
+
 20220925：
 
 ```
@@ -16,9 +17,13 @@ pip3 install -r requirements.txt
 2 run web_qt.py
 3 open the pcb project in the browser.
 4 click export menu.
-5 save to one asc file.
+5 save to one asc/d/p file.
   
 ```
+
+![web-qt](/doc/web_qt2.png)
+
+
 
 ![web-qt](/doc/web_qt_use.gif.gif)
 
@@ -38,28 +43,6 @@ pip3 install -r requirements.txt
 
 
 
-----------------------
-the gui_qt.py is not functional for this version.
-if you need it, use the prev version or next version.
-
-this is a convert program.
-their also contains the converted files.
-
-how to conver the decl from easyeda to pads format?
-
-
-```
-1 install requirements.txt using command:
-pip3 install -r requirements.txt
-
-2 run gui_qt.py
-3 input the footprint name, click search.
-4 click one of the compoment list
-5 click operation-to_pads. their will be one out.d file in the current directory.
-  
-```
-
-![gui-qt](/doc/gui_qt.png)
 
 how to use the converted files:
 

@@ -1,3 +1,5 @@
+import datetime
+
 s_control_statements = {
     'PCB': {
         'name': "*PCB*",
@@ -208,7 +210,39 @@ class PadsPcbAsciiRead:
                 continue
 
 
-class PadsPcbAsciiWrite:
+
+class PadsConvertBase:
+    def __init__(self):
+        pass
+    def _float_format(self, float_val):
+        """
+        转换float为5个小数的字符串
+        """
+        if type(float_val) == type(''):
+            float_val = float(float_val)
+        return str(round(float_val, 5))
+    def _list_to_str(self,ll, sep=' '):
+        """
+        将字符串转为中间带空格的行
+        如果有浮点数，则转换相应格式
+        如果有非字符串，则转为字符串
+        最后不加\n
+        """
+        ret=''
+        for i in ll:
+            if type(i)==type(''):
+                ret+= i+sep
+            elif type(i)==type(1.23):
+                ret += self._float_format(i)+sep
+            else:
+                ret += str(i) + sep
+
+        ret=ret.strip(sep)
+        return ret
+class PadsPcbAsciiWrite(PadsConvertBase):
+    
+    def __init__(self):
+        super(PadsPcbAsciiWrite, self).__init__()
 
     def _arc_convert_calc(self,x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
         #https://www.w3.org/TR/SVG11/paths.html#PathElement
@@ -316,10 +350,7 @@ class PadsPcbAsciiWrite:
         return [x1,y1,int(start_angle*10), int(angle_extent*10), center_x-rx, center_y-ry,  center_x+rx,center_y+ry ]
 
 
-    def _float_format(self, float_val):
-        if type(float_val) == type(''):
-            float_val = float(float_val)
-        return str(round(float_val, 5))
+
 
 
     def _get_piece_definition(self, piece, org):
@@ -405,18 +436,7 @@ class PadsPcbAsciiWrite:
 
         return ret
 
-    def _list_to_str(self,ll):
-        ret=''
-        for i in ll:
-            if type(i)==type(''):
-                ret+= i+' '
-            elif type(i)==type(1.23):
-                ret += self._float_format(i)+' '
-            else:
-                ret += str(i) + ' '
 
-        ret=ret.strip()
-        return ret
     def _get_pin_definition(self, pad, org):
         """
         from:
@@ -1230,5 +1250,598 @@ C1.1 R1.1
 
 
 
-class PadsLibAsciiWrite:
-    pass
+class PadsLibAsciiWrite(PadsConvertBase):
+    def __init__(self):
+        super(PadsLibAsciiWrite, self).__init__()
+        self.EASY_TOP_LAYER = '1'
+        self.EASY_BOTTOM_LAYER = '2'
+        self.EASY_TOP_SILK_LAYER = '3'
+        self.EASY_BOTTOM_SILK_LAYER = '4'
+
+        self.EASY_TOP_PASTEM_LAYER = '5'
+        self.EASY_BOTTOM_PASTEM_LAYER = '6'
+
+        self.EASY_TOP_SOLDERM_LAYER = '7'
+        self.EASY_BOTTOM_SOLDERM_LAYER = '8'
+
+        self.PADS_TOP_LAYER = '1'
+        self.PADS_BOTTOM_LAYER = '2'
+        self.PADS_TOP_SILK_LAYER = '26'
+        self.PADS_BOTTOM_SILK_LAYER = '29'
+
+        self.PADS_TOP_PASTEM_LAYER = '23'
+        self.PADS_BOTTOM_PASTEM_LAYER = '22'
+
+        self.PADS_TOP_SOLDERM_LAYER = '21'
+        self.PADS_BOTTOM_SOLDERM_LAYER = '28'
+        self.layer_id_to_pads={
+            self.EASY_TOP_SILK_LAYER:self.PADS_TOP_SILK_LAYER,
+            self.EASY_BOTTOM_SILK_LAYER:self.PADS_BOTTOM_SILK_LAYER,
+            self.EASY_TOP_LAYER:self.PADS_TOP_LAYER,
+            self.EASY_BOTTOM_LAYER:self.PADS_BOTTOM_LAYER,
+            self.EASY_TOP_SOLDERM_LAYER:self.PADS_TOP_SOLDERM_LAYER,
+            self.EASY_TOP_PASTEM_LAYER:self.PADS_TOP_PASTEM_LAYER,
+            self.EASY_BOTTOM_SOLDERM_LAYER: self.PADS_BOTTOM_SOLDERM_LAYER,
+            self.EASY_BOTTOM_PASTEM_LAYER: self.PADS_BOTTOM_PASTEM_LAYER
+
+
+        }
+
+    def _limit_decal_name(self, name):
+        """
+        decl_name max 40 char
+        :param name:
+        :return:
+        """
+
+        if len(name) > 40:
+            name = name[0:39]
+            name = name + '_'
+        return name
+
+    def _add_pad_stack(self, decl_name, pin_number, numberlayers, layer_list, plated, drill, drlori, drllen, drloff):
+        """
+        :param decl_name:
+        :param pin_number:Pin number to which the pad stack applies
+                    If the pin number is zero, then the pad stack applies to all pins that do not have a
+                    specific pad stack
+        :param numberlayers:Number of pad stack layer lines that follow the header line.
+        :param plated:Either the keyword P for plated drill hole or N for nonplated drill hole.
+        :param drill:Drill diameter for the pad
+                        Value of zero indicates that there is no drill hole
+        :param drlori:Orientation of a slotted hole
+                        Valid values range from 0 to 179.999 degrees.
+        :param drllen:Slotted hole length
+        :param drloff: Slot offset
+        :param layer_list:
+                    Each layer line can have one of the following formats:
+                    layer width shape
+                    (Round normal pad or round and square anti-pads)
+                    layer width shape corner
+                    (square normal pads)
+                    layer width shape intd
+                    (Annular pads)
+                    layer width shape ori length offset
+                    (Oval pads)
+                    layer width shape corner ori length offset
+                    (rectangular pads)
+                    layer width shape ori intd spkwid numspk
+                            layer Layer number
+                    Valid values range from 1 to 250.
+                    or
+                    Layer code of the pin
+                    Layer codes are defined as follows:
+                    -2 is the top layer
+                    -1 is all inner layers
+                    -0 is the bottom layer
+                    width Width of a finger pad or the external diameter of all other pad shapes
+
+                    shape Shape can be one of the following values:
+                    R—round pad
+                    S—square pad
+                    RA—round anti-pad
+                    SA—square anti-pad
+                    A—annular pad
+                    OF—oval finger pad
+                    RF—rectangular finger pad
+                    RT—round thermal pad
+                    ST—square thermal pad
+
+                    corner This field stores the numerical “corner radius” value and is used to support pads
+                    with rounded and chamfered corners. It only exists for square (S) pads and
+                    rectangular finger (RF) pad shapes. Zero value is used for 90 degree (nonrounded) pad corners; a positive value is used for pads with rounded corners; a
+                    negative value is used for pads with chamfered corners.
+
+                    intd Internal diameter of an annular or thermal pad
+                    ori Orientation of a finger pad or the thermal spokes
+                    Valid values range from 0 to 179.999 degrees.
+                    length Finger pad length
+                    offset Finger pad offset
+                    spkwid Thermal pad spoke width
+                    numspk Number of thermal pad spokes
+        :return:
+        """
+        # PAD pin numlayers plated drill [drlori drllen drloff]
+        # PAD pin numlayers plated drill [drlori drllen drloff]
+        out_str=''
+        out_str += "PAD " + self._list_to_str([pin_number, numberlayers, plated, drill, drlori, drllen, drloff])
+        out_str += '\n'
+        for j in layer_list:
+            out_str += self._list_to_str(j) + '\n'
+        return out_str
+
+    def _limit_part_name(self, name: str):
+        # *?:@,
+        name = name.replace(',', '_').replace('@', '_').replace(':', '_').replace('?', '_').replace('*', '_').replace(
+            ' ', '_').replace('Ω±', '_').replace('%', '_')
+        name = name.replace('±', '_').replace('(', '_').replace(')', '_').replace('Ω', '_').replace('±', '_')
+        return name
+
+    def add_pcb_decal_attrib_label(self, decal_name, attr_name, rel_x, rel_y, rotation,
+                                       mirror, height, width, layer, just, flags, fontinfo, textstring):
+            """
+            x y rotation mirror height width layer just flags fontinfo textstring
+            :param decal_name:
+            :param attr_name:
+            :param rel_x:Coordinates of the text string location relative to the origin of the schematic
+            :param rel_y:
+            :param rotation:Orientation of the text in degrees
+            :param mirror:Flag indicating text mirroring in PADS Layout.0 = not mirrored, 1 = mirrored about the y-axis when viewed with zero
+    orientation.
+            :param height:Height of text Values range from 0.01 to 1.0 inches, expressed in the selected units type
+            :param width:Width of text in mils Values range from 0.001 to 0.050 inches, expressed in the selected units type
+            :param layer: Numeric layer number for use in PADS Layout.Values range from 0 to 250. A layer value of zero means all layers.
+            :param just:Justification of the attribute text string
+                    Value is the decimal equivalent of a bit string as follows:
+                    Bits 0 to 3 encode a four-bit value for horizontal justification with the following
+                    values:
+                    0 = Left justified
+                    1 = Center justified
+                    2 = Right justified
+                    Bits 4 to 7 encode a four-bit value for vertical justification with the following
+                    values:
+                    0 = Bottom justified
+                    1 = Middle justified
+                    2 = Top justified.
+                    Allowed values for 0 and 90 degree rotation are as follows:
+                    Bottom left = 0
+                    Bottom center = 1
+                    Bottom right = 2
+                    Middle left = 16
+                    Middle center= 17
+                    Middle right = 18
+                    Top left = 32
+                    Top center = 33
+                    Top right = 34
+            :param flags:Type of label, name/value visibility, and right reading status
+                    Values are the decimal equivalent of an eight-bit binary value with bit fields
+                    defined as follows:
+                    Bits 0 to 2 contain a numeric value to define the label type:
+                    0 = General attribute label
+                    1 = Reference designator
+                    2 = Part type
+                    Bit 3 set indicates the label is right reading and displayed at the nearest 90-degree
+                    orientation.
+                    Bit 4 set indicates label is right reading but display is not constrained to a 90-
+                    degree orientation.
+                    Bit 5 set indicates that the attribute value is displayed.
+                    Bit 6 set indicates that the short version of the attribute name is displayed.
+                    Bit 7 set indicates that the full structured attribute name is displayed.
+            :param fontinfo:Font information for the attribute label text
+            :param textstring: Name of the attribute whose location is being defined
+                            The reserved names “REF-DES” and “PARTTYPE” refer to reference
+                            designator and part type labels
+                            Up to 255 characters, spaces allowed.
+            :return:
+            """
+            # 0     0     0     0 1.27  0.127 1 0 34 "Regular <Romansim Stroke Font>"
+            # x y rotation mirror height width layer just flags fontinfo textstring
+            out_str=''
+            out_str += self._list_to_str([rel_x,rel_y,rotation, mirror, height, width, layer,just,flags,'"'+fontinfo+'"'])+'\n'
+            out_str += textstring + '\n'
+
+            return out_str
+
+
+    def _add_txt(self, decl_name, text, x, y, rotation, layer, height, width, mirror, fontinfo, just=0, drwnum=0,
+                field=0):
+        # x y rotation layer height width mirror just drwnum field fontinfo
+        out_str = ''
+
+        out_str += self._list_to_str(
+            [x, y, rotation, layer, height, width, just,
+             drwnum, field, fontinfo], ' ')
+        out_str += '\n'
+        out_str += text
+        out_str += '\n'
+        return out_str
+    def _add_pieces(self, decl_name, type, numcoord, width, layer, linestyle, coord_list):
+        """
+        type numcoord width layer linestyle
+        x y (format for line segment)
+        x y ab aa ax1 ay1 ax2 ay2 (format for arcs)
+        :param decl_name:
+        :param type:
+        :param numcoord:
+        :param width:
+        :param layer:
+        :param linestyle:
+                    linestyle System flag for type of line or keepout restrictions
+            A value of 1 indicates a solid line; a value of 0 indicates an old Logic
+            style dotted line. Negative values indicate line styles introduced in
+            PADS 9.4 (for piece types OPEN, CLOSED, CIRCLE only):
+            -1 — solid
+            -2 — dashed
+            -3 — dotted
+            -4 — dash dotted
+            -5 — dash double-dotted
+            Positive values indicate Keepout Restrictions (for piece types
+            KPTCLS, KPTCIR only):
+            Bit 0: (0x01) Placement
+            Bit 1: (0x02) Trace and Copper
+            Bit 2: (0x04) Copper Pour and Plane Area
+            Bit 3: (0x08) Via and Jumper
+            Bit 4: (0x10) Test Point
+            Bit 5 : (0x20) Component Drill
+            Bit 6: (0x40) Accordion
+            Since TAGs have no graphics, the linestyle value for TAGs (typically
+            -1) is non-significant.
+        :param coord_list:
+        :return:
+        """
+
+        ret = ''
+
+        #FIXME: 此处坐标点数需要在内部计算，而不是外部传入
+        # 因为
+
+        numcoord=0
+
+        for j in coord_list:
+            if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
+                numcoord+=1
+
+
+        ret += self._list_to_str([type, numcoord, width,layer, linestyle])
+        ret += '\n'
+
+
+        for j in coord_list:
+            if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
+                ret += self._list_to_str([j['param']['x'],j['param']['y']])+'\n'
+        return ret
+
+    def _add_terminal(self, decl_name, pin_number, rx, ry, label_rx, label_ry):
+        out_str = ''
+        out_str += 'T' + self._list_to_str([rx, ry, label_rx, label_ry,pin_number])
+        out_str += '\n'
+        return out_str
+
+    def _decal_add_shape_pad(self, dshape, pakage_name,pieces,terminals,stacks ):
+        package_decl_name = pakage_name
+
+        termo=self._add_terminal(package_decl_name, dshape['number'], dshape['cx'], dshape['cy'], dshape['cx'], dshape['cy'])
+        terminals.append(termo)
+
+        numberlayers = 3
+        layer_list = None
+        if dshape['shape'] == 'RECT':
+            # rectangular finger pad
+            rotation = float(dshape['rotation'])
+            layer_shape = 'RF'
+            wh_swap = 0
+            ww = dshape['width']
+            hh = dshape['height']
+            if ww < hh:
+                ww, hh = hh, ww
+                wh_swap = 1
+                rotation = rotation + 89.998
+            if rotation > 180.0:
+                rotation -= 180.0
+            if rotation == 180.0:
+                rotation = 179.998
+            # layer width shape corner ori length offset
+            layer_one = [-2, hh,
+                         layer_shape, 0, round(rotation, 3),
+                         ww, 0]
+        elif dshape['shape'] == 'ELLIPSE':
+            # round pad
+            layer_shape = 'R'
+            # layer width shape
+            layer_one = [-2, dshape['height'], layer_shape]
+        elif dshape['shape'] == 'OVAL':
+            layer_shape = 'OF'
+            rotation = float(dshape['rotation'])
+
+            ww = dshape['width']
+            hh = dshape['height']
+            wh_swap = 0
+            if ww < hh:
+                wh_swap = 1
+                ww, hh = hh, ww
+                rotation = rotation + 89.998
+
+            if rotation > 180.0:
+                rotation -= 180.0
+            if rotation == 180.0:
+                rotation = 179.998
+            # layer width shape ori length offset
+            layer_one = [-2, hh, layer_shape,
+                         round(rotation, 3), ww, 0]
+        elif dshape['shape'] == 'POLYGON':
+            # TODO: 对异形焊盘的支持??? DFN-5_L3.0-W3.0-P0.65-BL-MDV1595SU
+            # print('decl_add_shape_pad:polygon not supported:', dshape['shape'])
+            layer_shape = 'R'
+            hh = dshape['height']
+            ww = dshape['width']
+
+            # layer width shape
+            layer_one = [-2, round((ww + hh) / 20, 5), layer_shape]
+            # layer width shape corner ori length offset
+            # layer_one = [-2, hh, layer_shape, 0, rotation, ww, 0]
+            piece_one = self._add_pieces(package_decl_name, 'COPCLS', len(dshape['points']), '10', 1, int(dshape['number']) - 1,
+                            dshape['points'])
+            pieces.append(piece_one)
+        else:
+            print('decl_add_shape_pad:unknown shape', dshape['shape'])
+            layer_shape = 'R'
+            layer_one = [-2, dshape['height'], layer_shape, 0, 0, dshape['width'], 0]
+
+        if dshape['layer_id'] == self.EASY_TOP_LAYER:
+            # 顶层，只有一层有焊盘
+            # -2 is the top layer
+            # -1 is all inner layers
+            # -0 is the bottom layer
+            layer_list = [layer_one,
+                          [-1, 0, 'R'],
+                          [0, 0, 'R']]
+        else:
+            # 多层，多层都一样的焊盘
+            layer_list = [layer_one,
+                          [-1] + layer_one[1:],
+                          [0] + layer_one[1:]]
+
+        if None in layer_list:
+            print('layer_list', layer_list)
+
+        stacko = self._add_pad_stack(package_decl_name, pin_number=dshape['number'], numberlayers=numberlayers,
+                        layer_list=layer_list, plated=('P' if dshape['plated'] == 'Y' else 'N'),
+                        drill=2 * dshape['hole_radius'], drlori='', drllen='', drloff='')
+        stacks.append(stacko)
+
+    def _decal_add_shape_circle(self, dshape, pieces, pakage_name):
+        if dshape['layer_id'] in self.layer_id_to_pads:# easy.TOP_SILK_LAYER:  # 顶层丝印层
+            piece_one = self._add_pieces(pakage_name, type='CIRCLE', numcoord=2,
+                            width=dshape['stroke_width'],
+                            layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
+                            coord_list=[[round(dshape['cx'] + dshape['r'], 5), dshape['cy']],
+                                        [round(dshape['cx'] - dshape['r'], 5), dshape['cy']]])
+            pieces.append(piece_one)
+        return pieces
+
+    def _decal_add_shape_track(self, dshape, pieces, pakage_name):
+
+        if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
+            piece_one = self._add_pieces(pakage_name, type='OPEN', numcoord=len(dshape['points']),
+                            width=dshape['stroke_width'],
+                            layer=26, linestyle=-1, coord_list=dshape['points'])
+            pieces.append(piece_one)
+        return pieces
+
+    def _decal_add_shape_solidregion(self, dshape, pieces, pakage_name):
+
+        if dshape['layer_id'] in self.layer_id_to_pads:  # 12-document 99-componentshapelayer.shape layer 100-leadshapelayer
+            piece_one = self._add_pieces(pakage_name, type='OPEN', numcoord=len(dshape['svg']),
+                            width=5,
+                            layer=26, linestyle=-1, coord_list=dshape['svg'])
+            pieces.append(piece_one)
+        return pieces
+
+    def _decal_add_shape_rect(self, dshape, pieces, pakage_name):
+        if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
+            piece_one = self._add_pieces(pakage_name, type='CLOSED', numcoord=5,
+                            width=dshape['stroke_width'],
+                            layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1, coord_list=[[dshape['x'], dshape['y']],
+                                                                                 [dshape['x'],
+                                                                                  round(dshape['y'] - dshape['height'],
+                                                                                        5)],
+                                                                                 [round(dshape['x'] + dshape['width'],
+                                                                                        5),
+                                                                                  round(dshape['y'] - dshape['height'],
+                                                                                        5)],
+                                                                                 [round(dshape['x'] + dshape['width'],
+                                                                                        5),
+                                                                                  round(dshape['y'], 5)],
+                                                                                 [dshape['x'], dshape['y']],
+                                                                                 ])
+
+            pieces.append(piece_one)
+        return pieces
+
+    def _decal_add_shape_text(self, dshape, txts, pakage_name):
+        """
+
+        :param dshape:
+        :param easy:
+        :param pads:
+        :return:
+        """
+        if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
+            txt_one = self._add_txt(pakage_name, text=dshape['text'], x=dshape['x'], y=dshape['y'],
+                         rotation=dshape['rotation'],
+                         layer=self.layer_id_to_pads[dshape['layer_id']], height=dshape['font_size'],
+                         width=50 if dshape['font_size'] > 50 else dshape['font_size'], mirror=dshape['mirror'],
+                         fontinfo="\"Regular 宋体\"")
+
+            txts.append(txt_one)
+        return txts
+
+    def _decal_add_shape_arc(self, dshape, pieces, pakage_name):
+        #package_decl_name = easy.pDetail['decl_name']
+        #if dshape['layer_id'] == easy.TOP_SILK_LAYER:  # 顶层丝印层
+        #    pass
+        pass
+
+    def dump_pcb_decal(self,easy_list):
+        """
+        A PCB decal consists of the following parts:
+        • Header line
+        • Decal attributes
+        • Attribute label locations
+        • Piece definitions
+        • Text definitions
+        Terminal definitions
+        • Pad-stack definitions
+        • Maximum layers designation
+        :return:
+        """
+        ret = ''
+
+        for i in easy_list:
+            if (i.doc_type == 'SCHLIB') and i.package_detail is not None:
+                i = i.package_detail
+            if i.doc_type!='PCBLIB':
+                # 只处理pcblib的格式，其他格式不处理
+                continue
+
+            decal_name = self._limit_decal_name(i.easy_data['title'])
+            unit = 'I'
+            x=0
+            y=0
+            attrs=[]
+            labels=[]
+            pieces=[]
+            txt=[]
+            terminals=[]
+            stacks=[]
+            maxlayers=0
+
+            ############################
+            # 此处要先统计此封装中的各内容
+            one_label = self.add_pcb_decal_attrib_label(decal_name=decal_name, attr_name='', rel_x=0, rel_y=0,
+                                            rotation=0, mirror=0, height=50, width=5, layer=26,
+                                            just=0, flags=33, fontinfo='Regular <Romansim Stroke Font>',
+                                            textstring='PART-TYPE')
+            labels.append(one_label)
+            one_label = self.add_pcb_decal_attrib_label(decal_name=decal_name, attr_name='', rel_x=0, rel_y=0,
+                                            rotation=0, mirror=0, height=50, width=5, layer=26,
+                                            just=0, flags=34, fontinfo='Regular <Romansim Stroke Font>',
+                                            textstring='REF-DES')
+            labels.append(one_label)
+
+            for dshape in i.easy_data['dataStr']['shape']:
+                if dshape['type'] == 'CIRCLE':
+                    pieces = self._decal_add_shape_circle(dshape, pieces,decal_name)
+                elif dshape['type'] == 'TRACK':
+                    pieces = self._decal_add_shape_track(dshape, pieces,decal_name)
+                elif dshape['type'] == 'PAD':
+                    self._decal_add_shape_pad(dshape,decal_name,pieces,terminals, stacks)
+                elif dshape['type'] == 'SOLIDREGION':
+                    self._decal_add_shape_solidregion(dshape, pieces,decal_name)
+                elif dshape['type'] == 'ARC':
+                    # TODO: ARC功能未实现
+                    self._decal_add_shape_arc(dshape, pieces,decal_name)
+                elif dshape['type'] == 'RECT':
+                    self._decal_add_shape_rect(dshape, pieces,decal_name)
+                elif dshape['type'] == 'TEXT':
+                    self._decal_add_shape_text(dshape, txt, decal_name)
+
+                else:
+                    pass
+                    print('unknown shape to pads', i,dshape)
+
+            ############################
+
+
+            # name u x y attrs labels pieces txt terminals stacks maxlayers
+            # TIMESTAMP year.month.day.hour.minute.second
+
+            ret += self._list_to_str([decal_name,unit, x,y,len(attrs), len(labels), len(pieces), len(txt), len(terminals), len(stacks), maxlayers])+'\n'
+            dt = datetime.datetime.fromtimestamp(i.easy_data['updateTime'])
+
+            ret += 'TIMESTAMP '+self._list_to_str([dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second],'.')+'\n'
+
+
+
+            ##############Decal attributes
+            for i in attrs:
+                ret += i
+
+            ##############Attribute Labels Format
+            for i in labels:
+                ret += i
+
+
+            for i in pieces:
+                ret += i
+            for i in txt:
+                # x y rotation layer height width mirror just drwnum field fontinfo
+                ret += i
+
+            for i in terminals:
+                # Tx1 y1 x2 y2 pin
+                ret += i
+
+            for i in stacks:
+                # PAD pin numlayers plated drill [drlori drllen drloff]
+                ret += i
+
+        return ret
+    def to_pcb_decals(self, easy_list):
+        ret ='*PADS-LIBRARY-PCB-DECALS-V9*\n\n'
+        ret+= self.dump_pcb_decal(easy_list)
+
+        ret += '\n*END*\n'
+        return ret
+
+    def dump_part_types(self,easy_list):
+        """
+        Each part type entry consists of the following parts:
+        • Part type header lines
+        • Attribute information (optional)
+        • Gate information (optional)
+        • Signal pin information (optional)
+        • Alphanumeric pins (optional)
+        :return:
+        """
+        #    def add_pcb_part(self, name, decl_name, unit, dt, logfam='UND', attrs=0, gates=0, sigpins=0, pinmap=0, flag=0):
+
+        logfam = 'UND'
+        attrs = 0
+        gates = 0
+        sigpins = 0
+        pinmap = 0
+        flag = 0
+        out_str = ''
+        for easy in easy_list:
+            if easy.doc_type != 'SCHLIB':
+                continue
+            if easy.package_detail is None:
+                #无封装
+                continue
+            part_name = easy.easy_data['title']
+            decal_name = easy.package_detail.easy_data['title']
+
+            #(self, name, decl_name, unit, dt, logfam='UND', attrs=0, gates=0, sigpins=0, pinmap=0, flag=0):
+            out_str += self._list_to_str(
+                [self._limit_part_name(part_name), self._limit_decal_name(decal_name), 'I', logfam,
+                 attrs, gates, sigpins, pinmap, flag])+'\n'
+
+            dt = datetime.datetime.fromtimestamp(easy.easy_data['updateTime'])
+
+            out_str += "TIMESTAMP " + self._list_to_str(
+                [dt.year, dt.month, dt.day, dt.hour, dt.minute,
+                 dt.second], '.') + '\n'
+
+        return out_str
+    def to_part_types(self, easy_list):
+        ret ='*PADS-LIBRARY-PART-TYPES-V9*\n'
+        ret += self.dump_part_types(easy_list)
+        ret += '*END*\n'
+        return ret
+
+
+
+    def easyeda_to_pads_ascii(self, easy_list):
+        return self.to_pcb_decals(easy_list), self.to_part_types(easy_list)
+

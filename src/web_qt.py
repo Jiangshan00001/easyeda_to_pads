@@ -13,18 +13,17 @@ import json
 #https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
 # 记录某个页面访问的url
 from easyeda import EasyEdaRead
-from pads_ascii import PadsPcbAsciiWrite
+from pads_ascii import PadsPcbAsciiWrite, PadsLibAsciiWrite
 
 
 class MyInterceptor(QWebEngineUrlRequestInterceptor):
+
     def interceptRequest(self,info):#QWebEngineUrlRequestInfo):
-
-
         if info.resourceType()==QWebEngineUrlRequestInfo.ResourceType.ResourceTypeXhr:#ResourceType.ResourceTypeXhr:
             print(info)
             print(info.resourceType())
             print(info.requestUrl())
-            self.url_list.append(info.requestUrl())
+            self.mywin.get_one_url_callback(info.requestUrl())
 
     def receivers(self,*args, **kwargs):
         print(args, kwargs)
@@ -44,7 +43,6 @@ class WebEngineView(QWebEngineView):
 class ExportGui(QMainWindow):
     def __init__(self):
         super(ExportGui, self).__init__()
-        self.url_list=[]
 
 
 
@@ -57,7 +55,8 @@ class WebGui(QMainWindow):
         self.resize(800, 600)
         self.HOME_URL='https://lceda.cn/'
 
-        self.url_list=[]
+        self.easy_pcb_list=[]
+        self.easy_pcb_lib_list=[]
 
         self.centralwidget = QtWidgets.QWidget(self)
         self.setCentralWidget(self.centralwidget)
@@ -91,7 +90,7 @@ class WebGui(QMainWindow):
         self.web = WebEngineView()
         web_profile = QWebEngineProfile(self.web)
         self.interceptor = MyInterceptor()
-        self.interceptor.url_list = self.url_list
+        self.interceptor.mywin = self
         web_profile.setUrlRequestInterceptor(self.interceptor)
         self.web.setPage(QWebEnginePage(web_profile, self.web))
         # self.web.page().set
@@ -109,8 +108,68 @@ class WebGui(QMainWindow):
         # init url address
         self.go_home()
 
+    def get_one_url_callback(self, qurl):
+
+        if qurl.host()!='lceda.cn':
+            return
+        if '/api/documents/' in qurl.path():
+            #self.export_one_pcb(i)
+            # export pcb
+            dat = self.get_one_url_resp(qurl)
+            dat = dat.data()
+            dec1 = json.loads(dat)
+
+            easy = EasyEdaRead()
+            easy.parse_json(dec1)
+            if easy.doc_type != 'PCB':
+                return
+
+            easy.org_to_zero()
+            easy.y_mirror()
+            easy.pin_renumber_all()
+            self.statusbar.showMessage('找到一个pcb:'+easy.easy_data['title'])
+            self.easy_pcb_list.append(easy)
+        elif '/api/components/' in qurl.path():
+            qurl=qurl
+
+            dat = self.get_one_url_resp(qurl)
+            dat = dat.data()
+            try:
+                dec1 = json.loads(dat)
+            except Exception as e:
+                print('not json. decode error')
+                return
+
+            easy = EasyEdaRead()
+            easy.parse_json(dec1)
+            if easy.doc_type!='SCHLIB':
+                return
+            easy.org_to_zero()
+            easy.y_mirror()
+            easy.pin_renumber_all()
+
+            self.easy_pcb_lib_list.append(easy)
+            self.statusbar.showMessage('找到一个元件:'+easy.easy_data['title']+' 封装:' + easy.package_detail.easy_data['title'])
+
+
+
+    def on_export(self):
+        # PCB document:
+        #https://lceda.cn/api/documents/8e002e4e89e54220b6a86befd9036596?version=6.5.15&uuid=8e002e4e89e54220b6a86befd9036596
+
+        # 'https://lceda.cn/api/documents/a9e9aa2b4732464083749469050b2e8a?version=6.5.15&uuid=a9e9aa2b4732464083749469050b2e8a'
+        for i in self.easy_pcb_list:
+            # 导出pcb文件
+            self.export_one_pcb(i)
+
+        if len(self.easy_pcb_lib_list)>0:
+            self.export_pcb_lib(self.easy_pcb_lib_list)
+
+        self.easy_pcb_lib_list.clear()
+        self.easy_pcb_list.clear()
+
+
     def renew_urlbar(self, q):
-        self.url_list.clear()
         self.address_text.setText(q.toString())
 
     def go_home(self):
@@ -118,9 +177,9 @@ class WebGui(QMainWindow):
         self.web.load(QUrl(self.address_text.text()))
 
     def on_load_finish(self):
-        pass
+        print('on_load_finish')
     def on_load_start(self):
-        self.url_list.clear()
+        print('on_load_start')
 
     def get_one_url_resp(self, url):
         Request = QNetworkRequest(url)
@@ -137,41 +196,34 @@ class WebGui(QMainWindow):
 
         return reply.readAll()
 
+    def export_pcb_lib(self, easy_list):
+        pads = PadsLibAsciiWrite()
+        decals, parts = pads.easyeda_to_pads_ascii(easy_list)
 
-    def export_one_pcb(self, url):
+        file_name = QFileDialog.getSaveFileName(self, "保存的decals文件(pads ascii v9格式)", 'default.d')
+        if len(file_name[0]) > 0:
+            f = open(file_name[0], 'w')
+            f.write(decals)
+            f.close()
+        file_name = QFileDialog.getSaveFileName(self, "保存的parts文件(pads ascii v9格式)", 'default.p')
+        if len(file_name[0]) > 0:
+            f = open(file_name[0], 'w')
+            f.write(decals)
+            f.close()
 
-        dat = self.get_one_url_resp(url)
-        dat = dat.data()
-        dec1 = json.loads(dat)
+        QMessageBox.information(self, 'OK!','lib export finish!')
 
-        easy = EasyEdaRead()
-        easy.parse_json(dec1)
-        easy.org_to_zero()
-        easy.y_mirror()
-        easy.pin_renumber_all()
+
+def export_one_pcb(self, easy):
+
         pads = PadsPcbAsciiWrite()
         pads_pcb_text = pads.easyeda_to_pads_ascii(easy)
-        file_name = QFileDialog.getSaveFileName(caption="保存的pcb文件(pads ascii v9.4格式)")
+        file_name = QFileDialog.getSaveFileName(self, "保存的pcb文件(pads ascii v9.4格式)", easy.easy_data['title']+'.asc')
         if len(file_name[0])>0:
             f = open(file_name[0], 'w')
             f.write(pads_pcb_text)
             f.close()
             QMessageBox.information(self, 'OK!','save file:'+file_name[0]+' finish!')
-
-    def on_export(self):
-        print(self.url_list)
-        # PCB document:
-        #https://lceda.cn/api/documents/8e002e4e89e54220b6a86befd9036596?version=6.5.15&uuid=8e002e4e89e54220b6a86befd9036596
-
-        # 'https://lceda.cn/api/documents/a9e9aa2b4732464083749469050b2e8a?version=6.5.15&uuid=a9e9aa2b4732464083749469050b2e8a'
-        for i in self.url_list:
-            print(i)
-            if i.host()!='lceda.cn':
-                continue
-
-            if '/api/documents/' in i.path():
-                self.export_one_pcb(i)
-
 
 
 
