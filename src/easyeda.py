@@ -521,8 +521,8 @@ class EasyEdaRead:
         if self.doc_type =='unknown':
             return
         if 'BBox' in self.easy_data['dataStr']:
-            x = self.easy_data['dataStr']['BBox']['x']
-            y = self.easy_data['dataStr']['BBox']['y']
+            x = self.easy_data['dataStr']['BBox']['x'] + self.easy_data['dataStr']['BBox']['width']/2
+            y = self.easy_data['dataStr']['BBox']['y'] + self.easy_data['dataStr']['BBox']['height']/2
         else:
             x = 0
             y = 0
@@ -587,7 +587,6 @@ class EasyEdaRead:
 
 
     def _parse_kv(self, key, val):
-        print(key)
         # 此处只处理：dataStr->shape dataStr->canvas dataStr->layers dataStr->objects
         if key == 'dataStr':
             if 'shape' in val:

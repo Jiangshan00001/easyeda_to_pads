@@ -18,3 +18,4 @@ src/tmp3.asc
 src/usdx_export_test.asc
 src/usdx_export_to_padsv94.asc
 src/~$test_pads_ascii.pcb.inf
+src/tmp/*

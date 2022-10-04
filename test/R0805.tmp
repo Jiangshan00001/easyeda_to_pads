@@ -1,0 +1,202 @@
+{
+    "success": true,
+    "code": 0,
+    "result": {
+        "uuid": "db0686dcba9c4ccebea2d9cb9ea42e3a",
+        "title": "TR0805D220KP0550Z",
+        "description": "",
+        "docType": 2,
+        "type": 3,
+        "lcsc": {
+            "id": 3060648,
+            "number": "C2858412"
+        },
+        "szlcsc": {
+            "id": 3060648,
+            "number": "C2858412"
+        },
+        "owner": {
+            "uuid": "0819f05c4eef4c71ace90d822a990e87",
+            "username": "LCSC",
+            "nickname": "LCSC",
+            "avatar": "//image.lceda.cn/avatars/2018/6/kFlrasi7W06gTdBLAqW3fkrqbDhbowynuSzkjqso.png"
+        },
+        "tags": [],
+        "updateTime": 1641821950,
+        "updated_at": "2022-07-04 11:45:10",
+        "dataStr": {
+            "head": {
+                "docType": "2",
+                "editorVersion": "6.4.20.6",
+                "x": 400,
+                "y": 300,
+                "c_para": {
+                    "pre": "U?",
+                    "name": "TR0805D220KP0550Z",
+                    "package": "R0805",
+                    "BOM_Supplier": "LCSC",
+                    "BOM_Supplier Part": "C2858412",
+                    "BOM_Manufacturer": "null",
+                    "BOM_Manufacturer Part": "TR0805D220KP0550Z",
+                    "BOM_JLCPCB Part Class": "Extended Part",
+                    "Contributor": "LCSC"
+                },
+                "uuid": "db0686dcba9c4ccebea2d9cb9ea42e3a",
+                "puuid": "b60f399a7a7e41848b2be1eb49c79141",
+                "importFlag": 0,
+                "c_spiceCmd": null,
+                "hasIdFlag": true,
+                "utime": 1627287531
+            },
+            "canvas": "CA~1000~1000~#FFFFFF~yes~#CCCCCC~10~1000~1000~line~10~pixel~5~400~300",
+            "shape": [
+                "R~390~296~~~20~8~#880000~1~0~none~gge3~0~",
+                "P~show~1~1~380~300~180~gge4~0^^380~300^^M 380 300 h 10~#000000^^0~395~303~0~1~start~~~#000000^^0~385~299~0~1~end~~~#000000^^0~387~300^^0~M 390 303 L 393 300 L 390 297",
+                "P~show~1~2~420~300~0~gge11~0^^420~300^^M 420 300 h -10~#000000^^0~405~303~0~2~end~~~#000000^^0~415~299~0~2~start~~~#000000^^0~413~300^^0~M 410 297 L 407 300 L 410 303"
+            ],
+            "BBox": {
+                "x": 379,
+                "y": 296,
+                "width": 42,
+                "height": 8
+            },
+            "colors": []
+        },
+        "verify": true,
+        "datastrid": "d01bcaee340146578fc6a54f7f8d5a21",
+        "SMT": true,
+        "jlcOnSale": 1,
+        "writable": false,
+        "isFavorite": false,
+        "packageDetail": {
+            "uuid": "b60f399a7a7e41848b2be1eb49c79141",
+            "title": "R0805",
+            "docType": 4,
+            "updateTime": 1651214550,
+            "owner": {
+                "uuid": "0819f05c4eef4c71ace90d822a990e87",
+                "username": "lcsc",
+                "nickname": "LCSC",
+                "avatar": "//image.lceda.cn/avatars/2018/6/kFlrasi7W06gTdBLAqW3fkrqbDhbowynuSzkjqso.png"
+            },
+            "datastrid": "59f4f062e58748a699f2b82bf2d63af8",
+            "writable": false,
+            "dataStr": {
+                "head": {
+                    "docType": "4",
+                    "editorVersion": "6.5.3",
+                    "c_para": {
+                        "package": "R0805",
+                        "pre": "R?",
+                        "Contributor": "lcsc",
+                        "link": "https://item.szlcsc.com/142685.html",
+                        "3DModel": "R0805_L2.0-W1.3-H0.6"
+                    },
+                    "hasIdFlag": true,
+                    "x": 4000,
+                    "y": 3000,
+                    "utime": 1651214544,
+                    "uuid": "b60f399a7a7e41848b2be1eb49c79141",
+                    "importFlag": 0,
+                    "transformList": "",
+                    "newgId": true
+                },
+                "canvas": "CA~1000~1000~#000000~yes~#FFFFFF~10~1000~1000~line~0.5~mm~1~45~visible~0.5~4000~3000~0~none",
+                "shape": [
+                    "SOLIDREGION~100~~M 3996.0630 3002.5098 L 3996.0630 2997.4902 L 3997.6378 2997.4902 L 3997.6378 3002.5098 Z ~solid~gge1000~~~~0",
+                    "SOLIDREGION~100~~M 4003.9370 3002.5098 L 4003.9370 2997.4902 L 4002.3622 2997.4902 L 4002.3622 3002.5098 Z ~solid~gge1001~~~~0",
+                    "SOLIDREGION~99~~M 3996.0630 3002.5098 L 3996.0630 2997.4902 L 4003.9370 2997.4902 L 4003.9370 3002.5098 Z ~solid~gge999~~~~0",
+                    "SOLIDREGION~5~~M 3993.307 3002.5197 L 3993.307 2997.4804 L 3993.5039 2997.2835 L 3998.0315 2997.2835 L 3998.2283 2997.4804 L 3998.2481 2999.0947 L 3996.4764 2999.0947 L 3996.4764 3000.8663 L 3998.2087 3000.8663 L 3998.2283 3002.5197 L 3998.0315 3002.7166 L 3993.5039 3002.7166 Z ~solid~gge1029~~~~0",
+                    "SOLIDREGION~5~~M 4001.7716 3002.5197 L 4001.7717 3000.8663 L 4003.5236 3000.8663 L 4003.5236 2999.0947 L 4001.7914 2999.0947 L 4001.7716 2997.4804 L 4001.9685 2997.2835 L 4006.496 2997.2835 L 4006.6929 2997.4804 L 4006.6929 3002.5197 L 4006.496 3002.7166 L 4001.9685 3002.7166 Z ~solid~gge1030~~~~0",
+                    "TRACK~0.6~3~~4001.8748 3003.6106 4006.9336 3003.6106 4006.9336 2996.3894 4001.8748 2996.3894~gge1006~0",
+                    "TRACK~0.6~3~~3998.1252 3003.6106 3993.0664 3003.6106 3993.0664 2996.3894 3998.1252 2996.3894~gge1007~0",
+                    "PAD~RECT~4003.804~3000~4.4588~5.4213~1~~2~0~4001.5748 3002.7106 4001.5748 2997.2894 4006.0336 2997.2894 4006.0336 3002.7106~0~gge1002~0~~Y~0~-393.7008~0.2000~4003.8042,3000",
+                    "PAD~RECT~3996.196~3000~4.4588~5.4213~1~~1~0~3998.4252 3002.7106 3998.4252 2997.2894 3993.9664 2997.2894 3993.9664 3002.7106~0~gge1004~0~~Y~0~-393.7008~0.2000~3996.1958,3000",
+                    "CIRCLE~3996.063~3002.5098~0.1181~0.2362~101~gge1034~0~~",
+                    "SVGNODE~{\"gId\":\"g1_outline\",\"nodeName\":\"g\",\"nodeType\":1,\"layerid\":\"19\",\"attrs\":{\"c_width\":\"7.874\",\"c_height\":\"5.1181\",\"c_rotation\":\"0,0,0\",\"z\":\"0\",\"c_origin\":\"3994.437,3000\",\"uuid\":\"c7acac53bcbc44d68fbab8f60a747688\",\"c_etype\":\"outline3D\",\"id\":\"g1_outline\",\"title\":\"R0805_L2.0-W1.3-H0.6\",\"layerid\":\"19\",\"transform\":\"scale(1) translate(0, 0)\"},\"childNodes\":[{\"gId\":\"g1_outline_line0\",\"nodeName\":\"polyline\",\"nodeType\":1,\"attrs\":{\"fill\":\"none\",\"id\":\"g1_outline_line0\",\"c_shapetype\":\"line\",\"points\":\"3996.063 2997.441 3996.063 3002.5591 3996.2598 3002.5591 3996.8504 3002.5591 3997.2441 3002.5591 3997.6378 3002.5591 4000.1968 3002.5591 4002.3622 3002.5591 4002.7559 3002.5591 4003.1496 3002.5591 4003.7401 3002.5591 4003.937 3002.5591 4003.937 2997.441 4003.7401 2997.441 4003.1496 2997.441 4002.7559 2997.441 4002.3622 2997.441 4000.1968 2997.441 3997.6378 2997.441 3997.2441 2997.441 3996.8504 2997.441 3996.2598 2997.441 3996.063 2997.441 3996.063 2997.441\"}}]}"
+                ],
+                "layers": [
+                    "1~TopLayer~#FF0000~true~false~true~",
+                    "2~BottomLayer~#0000FF~true~false~true~",
+                    "3~TopSilkLayer~#FFCC00~true~false~true~",
+                    "4~BottomSilkLayer~#66CC33~true~false~true~",
+                    "5~TopPasteMaskLayer~#808080~true~false~true~",
+                    "6~BottomPasteMaskLayer~#800000~true~false~true~",
+                    "7~TopSolderMaskLayer~#800080~true~false~true~0.3",
+                    "8~BottomSolderMaskLayer~#AA00FF~true~false~true~0.3",
+                    "9~Ratlines~#6464FF~true~false~true~",
+                    "10~BoardOutLine~#FF00FF~true~false~true~",
+                    "11~Multi-Layer~#FFFFFF~true~false~true~0.5",
+                    "12~Document~#FFFFFF~true~false~true~",
+                    "13~TopAssembly~#33CC99~true~false~true~",
+                    "14~BottomAssembly~#5555FF~true~false~true~",
+                    "15~Mechanical~#F022F0~true~false~true~",
+                    "19~3DModel~#66CCFF~true~false~true~",
+                    "21~Inner1~#800000~false~false~false~~",
+                    "22~Inner2~#008000~false~false~false~~",
+                    "23~Inner3~#00FF00~false~false~false~~",
+                    "24~Inner4~#BC8E00~false~false~false~~",
+                    "25~Inner5~#70DBFA~false~false~false~~",
+                    "26~Inner6~#00CC66~false~false~false~~",
+                    "27~Inner7~#9966FF~false~false~false~~",
+                    "28~Inner8~#800080~false~false~false~~",
+                    "29~Inner9~#008080~false~false~false~~",
+                    "30~Inner10~#15935F~false~false~false~~",
+                    "31~Inner11~#000080~false~false~false~~",
+                    "32~Inner12~#00B400~false~false~false~~",
+                    "33~Inner13~#2E4756~false~false~false~~",
+                    "34~Inner14~#99842F~false~false~false~~",
+                    "35~Inner15~#FFFFAA~false~false~false~~",
+                    "36~Inner16~#99842F~false~false~false~~",
+                    "37~Inner17~#2E4756~false~false~false~~",
+                    "38~Inner18~#3535FF~false~false~false~~",
+                    "39~Inner19~#8000BC~false~false~false~~",
+                    "40~Inner20~#43AE5F~false~false~false~~",
+                    "41~Inner21~#C3ECCE~false~false~false~~",
+                    "42~Inner22~#728978~false~false~false~~",
+                    "43~Inner23~#39503F~false~false~false~~",
+                    "44~Inner24~#0C715D~false~false~false~~",
+                    "45~Inner25~#5A8A80~false~false~false~~",
+                    "46~Inner26~#2B937E~false~false~false~~",
+                    "47~Inner27~#23999D~false~false~false~~",
+                    "48~Inner28~#45B4E3~false~false~false~~",
+                    "49~Inner29~#215DA1~false~false~false~~",
+                    "50~Inner30~#4564D7~false~false~false~~",
+                    "51~Inner31~#6969E9~false~false~false~~",
+                    "52~Inner32~#9069E9~false~false~false~~",
+                    "99~ComponentShapeLayer~#00CCCC~true~false~true~0.4",
+                    "100~LeadShapeLayer~#CC9999~true~false~true~",
+                    "101~ComponentPolarityLayer~#66FFCC~true~true~true~",
+                    "Hole~Hole~#222222~false~false~true~",
+                    "DRCError~DRCError~#FAD609~false~false~true~"
+                ],
+                "objects": [
+                    "All~true~false",
+                    "Component~true~true",
+                    "Prefix~true~true",
+                    "Name~true~false",
+                    "Track~true~true",
+                    "Pad~true~true",
+                    "Via~true~true",
+                    "Hole~true~true",
+                    "Copper_Area~true~true",
+                    "Circle~true~true",
+                    "Arc~true~true",
+                    "Solid_Region~true~true",
+                    "Text~true~true",
+                    "Image~true~true",
+                    "Rect~true~true",
+                    "Dimension~true~true",
+                    "Protractor~true~true"
+                ],
+                "BBox": {
+                    "x": 3993.1,
+                    "y": 2996.4,
+                    "width": 13.9,
+                    "height": 7.2
+                },
+                "netColors": []
+            }
+        }
+    }
+}

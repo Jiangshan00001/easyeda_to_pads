@@ -239,12 +239,118 @@ class PadsConvertBase:
 
         ret=ret.strip(sep)
         return ret
-class PadsPcbAsciiWrite(PadsConvertBase):
-    
-    def __init__(self):
-        super(PadsPcbAsciiWrite, self).__init__()
+
 
     def _arc_convert_calc(self,x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
+        #https://www.w3.org/TR/SVG11/paths.html#PathElement
+        # https://blog.csdn.net/fuckcdn/article/details/83937140
+        # https://github.com/regebro/svg.path/blob/master/src/svg/path/path.py
+        # http://svn.apache.org/repos/asf/xmlgraphics/batik/branches/svg11/sources/org/apache/batik/ext/awt/geom/ExtendedGeneralPath.java
+        # x1 y1 ab aa ax1 ay1 ax2 ay2
+
+        # x1 y1 Beginning of the arc
+        # ab Beginning angle of the arc in tenths of a degree
+        # aa Number of degrees in the arc in tenths of a degree
+        # ax1, ay1 Lower left point of the rectangle around the circle of the arc
+        # ax2, ay2 Upper right point of the rectangle around the circle of the arc
+        # ax2 – ax1 = ay2 – ay1 Diameter of the circle of the arc
+        # (ax1 + ax2)/2, (ay1 +ay2)/2
+        # Coordinates of the center of the arc circle
+        import math
+        #str->int/float
+        x_rotation = float(x_rotation)
+        large_arc_flag = int(large_arc_flag)
+        sweep_flag = int(sweep_flag)
+
+        dx2=(x1-x2)/2
+        dy2=(y1-y2)/2
+        sx2=(x1+x2)/2.0
+        sy2=(y1+y2)/2.0
+        x1_org = x1
+        y1_org = y1
+        #// Convert angle from degrees to radians
+
+        angle = math.radians(x_rotation)
+        # Compute the half distance between the current and the final point
+        cosAngle=math.cos(angle)
+        sinAngle=math.sin(angle)
+
+        # Step 1 : Compute (x1prim, y1prim)
+        x1 = cosAngle*dx2 + sinAngle *dy2
+        Px1=x1 * x1
+        y1 = -sinAngle * dx2 + cosAngle * dy2
+        Py1 = y1 * y1
+        Prx = rx*rx
+        Pry = ry*ry
+
+        #check that radii are large enough
+        #correct out of range radii
+        radius_scale = (Px1/Prx) + Py1/Pry
+        if radius_scale>1:
+            radius_scale = math.sqrt(radius_scale)
+            rx *= radius_scale
+            ry *= radius_scale
+            Prx = rx*rx
+            Pry = ry*ry
+        else:
+            #SVG spec only scales UP
+            radius_scale = 1
+
+        sign = -1 if large_arc_flag==sweep_flag else 1
+        sq = ((Prx*Pry)-(Prx*Py1)-(Pry*Px1))/((Prx*Py1)+(Pry*Px1))
+        if sq<0:
+            sq = 0
+        coef = sign * math.sqrt(sq)
+        cx1=coef * ((rx*y1)/ry)
+        cy1=coef * (- (ry*x1)/rx)
+
+        #//step3 compute cx cy from cx1 cy1
+
+
+        center_x = sx2 + (cosAngle*cx1-sinAngle *cy1)
+        center_y = sy2+(sinAngle*cx1 + cosAngle *cy1)
+
+        # compute anglestart angleExtent
+
+        # anglestart
+        ux = (x1- cx1) / rx
+        uy = (y1 - cy1) / ry
+        vx = (-x1 - cx1) / rx
+        vy = (-y1 - cy1) / ry
+        n = math.sqrt(ux * ux + uy * uy)
+        p = ux
+        sign = -1.0 if uy<0 else 1.0
+        start_angle = math.degrees(sign * math.acos(p / n))
+
+        start_angle = start_angle % 360
+
+        # angleExtent
+        n = math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
+        p = ux * vx + uy * vy
+        d = p / n
+        sign = -1.0 if (ux * vy - uy * vx) < 0 else 1.0
+
+        # In certain cases the above calculation can through inaccuracies
+        # become just slightly out of range, f ex -1.0000000000000002.
+        if d > 1.0:
+            d = 1.0
+        elif d < -1.0:
+            d = -1.0
+        angle_extent = math.degrees(sign * math.acos(d))
+
+        angle_extent = angle_extent % 360
+
+        if (not sweep_flag ) and (angle_extent>0):
+           angle_extent -= 360.0
+        elif sweep_flag and (angle_extent<0):
+           angle_extent += 360.0
+
+
+        #angle_extent=-angle_extent
+
+        return [x1_org, y1_org, int(start_angle*10), int(angle_extent*10), center_x-rx, center_y-ry,  center_x+rx,center_y+ry ]
+
+    def _arc_convert_calc_tmp1(self,x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
         #https://www.w3.org/TR/SVG11/paths.html#PathElement
         # https://blog.csdn.net/fuckcdn/article/details/83937140
         # https://github.com/regebro/svg.path/blob/master/src/svg/path/path.py
@@ -342,13 +448,14 @@ class PadsPcbAsciiWrite(PadsConvertBase):
             angle_extent -= 360
 
         angle_extent=-angle_extent
-        #start_angle=-start_angle
-
-        # angle_extent = angle_extent % 360
-        # start_angle = start_angle % 360
 
         return [x1,y1,int(start_angle*10), int(angle_extent*10), center_x-rx, center_y-ry,  center_x+rx,center_y+ry ]
 
+
+class PadsPcbAsciiWrite(PadsConvertBase):
+    
+    def __init__(self):
+        super(PadsPcbAsciiWrite, self).__init__()
 
 
 
@@ -406,7 +513,6 @@ class PadsPcbAsciiWrite(PadsConvertBase):
             #ret += self._float_format(k[0])+(' '*6) + self._float_format(k[1])+(' ' *6) + self._list_to_str(k[2:])+'\n'
             ret += self._list_to_str(                k) + '\n'
             ret += self._list_to_str([x2-org[0],y2-org[1]])+'\n'
-            pass
         return ret
 
     def _get_text_definition(self, itext, org):
@@ -1455,13 +1561,13 @@ class PadsLibAsciiWrite(PadsConvertBase):
         out_str += text
         out_str += '\n'
         return out_str
-    def _add_pieces(self, decl_name, type, numcoord, width, layer, linestyle, coord_list):
+    def _add_pieces(self, decl_name, typ, numcoord, width, layer, linestyle, coord_list):
         """
         type numcoord width layer linestyle
         x y (format for line segment)
         x y ab aa ax1 ay1 ax2 ay2 (format for arcs)
         :param decl_name:
-        :param type:
+        :param typ:
         :param numcoord:
         :param width:
         :param layer:
@@ -1496,19 +1602,60 @@ class PadsLibAsciiWrite(PadsConvertBase):
         # 因为
 
         numcoord=0
+        is_arc = 0
+        if type(coord_list[0])==type([]):
+            # 兼容老的坐标形式，内部是坐标点
+            numcoord = len(coord_list)
+        else:
+            #新的格式，内部是dict
+            for j in coord_list:
+                if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
+                    numcoord+=1
+                if j['cmd']=='A':
+                    #arc
+                    is_arc = 1
+                    numcoord=3
+                    break
 
-        for j in coord_list:
-            if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
-                numcoord+=1
 
-
-        ret += self._list_to_str([type, numcoord, width,layer, linestyle])
+        ret += self._list_to_str([typ, numcoord, width, layer, linestyle])
         ret += '\n'
 
+        if is_arc:
+            j = coord_list[0]
+            ret += self._list_to_str([j['param']['x'], j['param']['y']]) + '\n'
 
-        for j in coord_list:
-            if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
-                ret += self._list_to_str([j['param']['x'],j['param']['y']])+'\n'
+            x1 = coord_list[0]['param']['x']
+            y1 = coord_list[0]['param']['y']
+            x2 = coord_list[1]['param']['x']
+            y2 = coord_list[1]['param']['y']
+            rx = coord_list[1]['param']['rx']
+            ry = coord_list[1]['param']['ry']
+            x_rotation = coord_list[1]['param']['x_rotation']
+            large_arc_flag = coord_list[1]['param']['large_arc_flag']
+            sweep_flag = coord_list[1]['param']['sweep_flag']
+            # calc arc here
+            # x1 y1 ab aa ax1 ay1 ax2 ay2
+            # eg: 1.27   1.778  369 1063 -1.30175 -0.508 1.55575 2.3495
+
+            # FIXME: 此处计算有问题，导致弧度不对!!!!!
+            k = self._arc_convert_calc(x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag)
+            # k = [k[0] - org[0], k[1] - org[1], k[2], k[3], k[4] - org[0], k[5] - org[1], k[6] - org[0], k[7] - org[1]]
+            # ret += self._float_format(k[0])+(' '*6) + self._float_format(k[1])+(' ' *6) + self._list_to_str(k[2:])+'\n'
+            k3=k[3]
+            k = [k[0], k[1], k[2], k3, k[4], k[5], k[6], k[7]]
+
+            ret += self._list_to_str(k) + '\n'
+            ret += self._list_to_str([x2 , y2 ]) + '\n'
+
+        else:
+            for j in coord_list:
+                if type(j)==type([]):
+                    ret += self._list_to_str(j)+'\n'
+                else:
+                    if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
+                        ret += self._list_to_str([j['param']['x'],j['param']['y']])+'\n'
+
         return ret
 
     def _add_terminal(self, decl_name, pin_number, rx, ry, label_rx, label_ry):
@@ -1611,10 +1758,10 @@ class PadsLibAsciiWrite(PadsConvertBase):
 
     def _decal_add_shape_circle(self, dshape, pieces, pakage_name):
         if dshape['layer_id'] in self.layer_id_to_pads:# easy.TOP_SILK_LAYER:  # 顶层丝印层
-            piece_one = self._add_pieces(pakage_name, type='CIRCLE', numcoord=2,
-                            width=dshape['stroke_width'],
-                            layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
-                            coord_list=[[round(dshape['cx'] + dshape['r'], 5), dshape['cy']],
+            piece_one = self._add_pieces(pakage_name, typ='CIRCLE', numcoord=2,
+                                         width=dshape['stroke_width'],
+                                         layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
+                                         coord_list=[[round(dshape['cx'] + dshape['r'], 5), dshape['cy']],
                                         [round(dshape['cx'] - dshape['r'], 5), dshape['cy']]])
             pieces.append(piece_one)
         return pieces
@@ -1622,26 +1769,26 @@ class PadsLibAsciiWrite(PadsConvertBase):
     def _decal_add_shape_track(self, dshape, pieces, pakage_name):
 
         if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
-            piece_one = self._add_pieces(pakage_name, type='OPEN', numcoord=len(dshape['points']),
-                            width=dshape['stroke_width'],
-                            layer=26, linestyle=-1, coord_list=dshape['points'])
+            piece_one = self._add_pieces(pakage_name, typ='OPEN', numcoord=len(dshape['points']),
+                                         width=dshape['stroke_width'],
+                                         layer=26, linestyle=-1, coord_list=dshape['points'])
             pieces.append(piece_one)
         return pieces
 
     def _decal_add_shape_solidregion(self, dshape, pieces, pakage_name):
 
         if dshape['layer_id'] in self.layer_id_to_pads:  # 12-document 99-componentshapelayer.shape layer 100-leadshapelayer
-            piece_one = self._add_pieces(pakage_name, type='OPEN', numcoord=len(dshape['svg']),
-                            width=5,
-                            layer=26, linestyle=-1, coord_list=dshape['svg'])
+            piece_one = self._add_pieces(pakage_name, typ='OPEN', numcoord=len(dshape['svg']),
+                                         width=5,
+                                         layer=26, linestyle=-1, coord_list=dshape['svg'])
             pieces.append(piece_one)
         return pieces
 
     def _decal_add_shape_rect(self, dshape, pieces, pakage_name):
         if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
-            piece_one = self._add_pieces(pakage_name, type='CLOSED', numcoord=5,
-                            width=dshape['stroke_width'],
-                            layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1, coord_list=[[dshape['x'], dshape['y']],
+            piece_one = self._add_pieces(pakage_name, typ='CLOSED', numcoord=5,
+                                         width=dshape['stroke_width'],
+                                         layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1, coord_list=[[dshape['x'], dshape['y']],
                                                                                  [dshape['x'],
                                                                                   round(dshape['y'] - dshape['height'],
                                                                                         5)],
@@ -1677,10 +1824,14 @@ class PadsLibAsciiWrite(PadsConvertBase):
         return txts
 
     def _decal_add_shape_arc(self, dshape, pieces, pakage_name):
-        #package_decl_name = easy.pDetail['decl_name']
-        #if dshape['layer_id'] == easy.TOP_SILK_LAYER:  # 顶层丝印层
-        #    pass
-        pass
+        if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
+            piece_one = self._add_pieces(pakage_name, typ='OPEN', numcoord=5,
+                                         width=dshape['stroke_width'],
+                                         layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
+                                         coord_list=dshape['svg'])
+
+            pieces.append(piece_one)
+        return pieces
 
     def dump_pcb_decal(self,easy_list):
         """
@@ -1756,6 +1907,7 @@ class PadsLibAsciiWrite(PadsConvertBase):
             # name u x y attrs labels pieces txt terminals stacks maxlayers
             # TIMESTAMP year.month.day.hour.minute.second
 
+            ret +='\n'
             ret += self._list_to_str([decal_name,unit, x,y,len(attrs), len(labels), len(pieces), len(txt), len(terminals), len(stacks), maxlayers])+'\n'
             dt = datetime.datetime.fromtimestamp(i.easy_data['updateTime'])
 
