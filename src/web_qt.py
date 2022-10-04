@@ -225,7 +225,7 @@ class WebGui(QMainWindow):
             easy.org_to_zero()
             easy.y_mirror()
             easy.pin_renumber_all()
-            self.statusbar.showMessage('找到一个pcb:' + easy.easy_data['title'])
+            self.statusbar.showMessage('找到一个pcb:' + easy.easy_data['title']+'. 点击export菜单按钮可以导出')
             self.easy_pcb_list.append(easy)
         elif '/api/components/' in qurl.path():
             qurl = qurl
@@ -248,7 +248,7 @@ class WebGui(QMainWindow):
 
             self.easy_pcb_lib_list.append(easy)
             self.statusbar.showMessage(
-                '找到一个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data['title'])
+                '找到一个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data['title']+'. 点击export菜单按钮可以导出')
 
     def on_export(self):
 
@@ -314,15 +314,15 @@ class WebGui(QMainWindow):
         QMessageBox.information(self, 'OK!', 'lib export finish!')
 
 
-def export_one_pcb(self, easy):
-    pads = PadsPcbAsciiWrite()
-    pads_pcb_text = pads.easyeda_to_pads_ascii(easy)
-    file_name = QFileDialog.getSaveFileName(self, "保存的pcb文件(pads ascii v9.4格式)", easy.easy_data['title'] + '.asc')
-    if len(file_name[0]) > 0:
-        f = open(file_name[0], 'w')
-        f.write(pads_pcb_text)
-        f.close()
-        QMessageBox.information(self, 'OK!', 'save file:' + file_name[0] + ' finish!')
+    def export_one_pcb(self, easy):
+        pads = PadsPcbAsciiWrite()
+        pads_pcb_text = pads.easyeda_to_pads_ascii(easy)
+        file_name = QFileDialog.getSaveFileName(self, "保存的pcb文件(pads ascii v9.4格式)", easy.easy_data['title'] + '.asc')
+        if len(file_name[0]) > 0:
+            f = open(file_name[0], 'w')
+            f.write(pads_pcb_text)
+            f.close()
+            QMessageBox.information(self, 'OK!', 'save file:' + file_name[0] + ' finish!')
 
 
 if __name__ == '__main__':

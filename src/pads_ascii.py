@@ -1,5 +1,7 @@
 import datetime
 
+from arc_convert import arc_convert_calc
+
 s_control_statements = {
     'PCB': {
         'name': "*PCB*",
@@ -210,10 +212,10 @@ class PadsPcbAsciiRead:
                 continue
 
 
-
 class PadsConvertBase:
     def __init__(self):
         pass
+
     def _float_format(self, float_val):
         """
         转换float为5个小数的字符串
@@ -221,137 +223,31 @@ class PadsConvertBase:
         if type(float_val) == type(''):
             float_val = float(float_val)
         return str(round(float_val, 5))
-    def _list_to_str(self,ll, sep=' '):
+
+    def _list_to_str(self, ll, sep=' '):
         """
         将字符串转为中间带空格的行
         如果有浮点数，则转换相应格式
         如果有非字符串，则转为字符串
         最后不加\n
         """
-        ret=''
+        ret = ''
         for i in ll:
-            if type(i)==type(''):
-                ret+= i+sep
-            elif type(i)==type(1.23):
-                ret += self._float_format(i)+sep
+            if type(i) == type(''):
+                ret += i + sep
+            elif type(i) == type(1.23):
+                ret += self._float_format(i) + sep
             else:
                 ret += str(i) + sep
 
-        ret=ret.strip(sep)
+        ret = ret.strip(sep)
         return ret
 
+    def _arc_convert_calc(self, x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
+        return arc_convert_calc(x1,y1,x2,y2,rx, ry, x_rotation, large_arc_flag, sweep_flag)
 
-    def _arc_convert_calc(self,x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
-        #https://www.w3.org/TR/SVG11/paths.html#PathElement
-        # https://blog.csdn.net/fuckcdn/article/details/83937140
-        # https://github.com/regebro/svg.path/blob/master/src/svg/path/path.py
-        # http://svn.apache.org/repos/asf/xmlgraphics/batik/branches/svg11/sources/org/apache/batik/ext/awt/geom/ExtendedGeneralPath.java
-        # x1 y1 ab aa ax1 ay1 ax2 ay2
-
-        # x1 y1 Beginning of the arc
-        # ab Beginning angle of the arc in tenths of a degree
-        # aa Number of degrees in the arc in tenths of a degree
-        # ax1, ay1 Lower left point of the rectangle around the circle of the arc
-        # ax2, ay2 Upper right point of the rectangle around the circle of the arc
-        # ax2 – ax1 = ay2 – ay1 Diameter of the circle of the arc
-        # (ax1 + ax2)/2, (ay1 +ay2)/2
-        # Coordinates of the center of the arc circle
-        import math
-        #str->int/float
-        x_rotation = float(x_rotation)
-        large_arc_flag = int(large_arc_flag)
-        sweep_flag = int(sweep_flag)
-
-        dx2=(x1-x2)/2
-        dy2=(y1-y2)/2
-        sx2=(x1+x2)/2.0
-        sy2=(y1+y2)/2.0
-        x1_org = x1
-        y1_org = y1
-        #// Convert angle from degrees to radians
-
-        angle = math.radians(x_rotation)
-        # Compute the half distance between the current and the final point
-        cosAngle=math.cos(angle)
-        sinAngle=math.sin(angle)
-
-        # Step 1 : Compute (x1prim, y1prim)
-        x1 = cosAngle*dx2 + sinAngle *dy2
-        Px1=x1 * x1
-        y1 = -sinAngle * dx2 + cosAngle * dy2
-        Py1 = y1 * y1
-        Prx = rx*rx
-        Pry = ry*ry
-
-        #check that radii are large enough
-        #correct out of range radii
-        radius_scale = (Px1/Prx) + Py1/Pry
-        if radius_scale>1:
-            radius_scale = math.sqrt(radius_scale)
-            rx *= radius_scale
-            ry *= radius_scale
-            Prx = rx*rx
-            Pry = ry*ry
-        else:
-            #SVG spec only scales UP
-            radius_scale = 1
-
-        sign = -1 if large_arc_flag==sweep_flag else 1
-        sq = ((Prx*Pry)-(Prx*Py1)-(Pry*Px1))/((Prx*Py1)+(Pry*Px1))
-        if sq<0:
-            sq = 0
-        coef = sign * math.sqrt(sq)
-        cx1=coef * ((rx*y1)/ry)
-        cy1=coef * (- (ry*x1)/rx)
-
-        #//step3 compute cx cy from cx1 cy1
-
-
-        center_x = sx2 + (cosAngle*cx1-sinAngle *cy1)
-        center_y = sy2+(sinAngle*cx1 + cosAngle *cy1)
-
-        # compute anglestart angleExtent
-
-        # anglestart
-        ux = (x1- cx1) / rx
-        uy = (y1 - cy1) / ry
-        vx = (-x1 - cx1) / rx
-        vy = (-y1 - cy1) / ry
-        n = math.sqrt(ux * ux + uy * uy)
-        p = ux
-        sign = -1.0 if uy<0 else 1.0
-        start_angle = math.degrees(sign * math.acos(p / n))
-
-        start_angle = start_angle % 360
-
-        # angleExtent
-        n = math.sqrt((ux * ux + uy * uy) * (vx * vx + vy * vy))
-        p = ux * vx + uy * vy
-        d = p / n
-        sign = -1.0 if (ux * vy - uy * vx) < 0 else 1.0
-
-        # In certain cases the above calculation can through inaccuracies
-        # become just slightly out of range, f ex -1.0000000000000002.
-        if d > 1.0:
-            d = 1.0
-        elif d < -1.0:
-            d = -1.0
-        angle_extent = math.degrees(sign * math.acos(d))
-
-        angle_extent = angle_extent % 360
-
-        if (not sweep_flag ) and (angle_extent>0):
-           angle_extent -= 360.0
-        elif sweep_flag and (angle_extent<0):
-           angle_extent += 360.0
-
-
-        #angle_extent=-angle_extent
-
-        return [x1_org, y1_org, int(start_angle*10), int(angle_extent*10), center_x-rx, center_y-ry,  center_x+rx,center_y+ry ]
-
-    def _arc_convert_calc_tmp1(self,x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
-        #https://www.w3.org/TR/SVG11/paths.html#PathElement
+    def _arc_convert_calc_tmp1(self, x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
+        # https://www.w3.org/TR/SVG11/paths.html#PathElement
         # https://blog.csdn.net/fuckcdn/article/details/83937140
         # https://github.com/regebro/svg.path/blob/master/src/svg/path/path.py
         # http://svn.apache.org/repos/asf/xmlgraphics/batik/branches/svg11/sources/org/apache/batik/ext/awt/geom/ExtendedGeneralPath.java
@@ -372,39 +268,39 @@ class PadsConvertBase:
         sweep_flag = int(sweep_flag)
 
         # Compute the half distance between the current and the final point
-        cosr=math.cos(math.radians(x_rotation))
-        sinr=math.sin(math.radians(x_rotation))
-        dx=(x1-x2)/2
-        dy=(y1-y2)/2
+        cosr = math.cos(math.radians(x_rotation))
+        sinr = math.sin(math.radians(x_rotation))
+        dx = (x1 - x2) / 2
+        dy = (y1 - y2) / 2
 
         # Step 1 : Compute (x1prim, y1prim)
-        x1prim = cosr*dx + sinr *dy
-        x1prim_sq=x1prim * x1prim
+        x1prim = cosr * dx + sinr * dy
+        x1prim_sq = x1prim * x1prim
         y1prim = -sinr * dx + cosr * dy
         y1prim_sq = y1prim * y1prim
-        rx_sq = rx*rx
-        ry_sq = ry*ry
+        rx_sq = rx * rx
+        ry_sq = ry * ry
 
-        #check that radii are large enough
-        #correct out of range radii
-        radius_scale = (x1prim_sq/rx_sq) + y1prim_sq/ry_sq
-        if radius_scale>1:
+        # check that radii are large enough
+        # correct out of range radii
+        radius_scale = (x1prim_sq / rx_sq) + y1prim_sq / ry_sq
+        if radius_scale > 1:
             radius_scale = math.sqrt(radius_scale)
             rx *= radius_scale
             ry *= radius_scale
-            rx_sq = rx*rx
-            ry_sq = ry*ry
+            rx_sq = rx * rx
+            ry_sq = ry * ry
         else:
-            #SVG spec only scales UP
+            # SVG spec only scales UP
             radius_scale = 1
 
         t1 = rx_sq * y1prim_sq
         t2 = ry_sq * x1prim_sq
         c = math.sqrt(abs((rx_sq * ry_sq - t1 - t2) / (t1 + t2)))
 
-        #FIXME:here
-        #sq = (rx_sq*ry_sq - rx_sq*y1prim_sq - ry_sq *x1prim_sq)/(rx_sq*y1prim_sq + ry_sq*x1prim_sq  )
-        #sing_fix =
+        # FIXME:here
+        # sq = (rx_sq*ry_sq - rx_sq*y1prim_sq - ry_sq *x1prim_sq)/(rx_sq*y1prim_sq + ry_sq*x1prim_sq  )
+        # sing_fix =
         if large_arc_flag != sweep_flag:
             c = -c
         cxprim = c * rx * y1prim / ry
@@ -412,7 +308,6 @@ class PadsConvertBase:
 
         center_x = (cosr * cxprim - sinr * cyprim) + ((x1 + x2) / 2)
         center_y = (sinr * cxprim + cosr * cyprim) + ((y1 + y2) / 2)
-
 
         ux = (x1prim - cxprim) / rx
         uy = (y1prim - cyprim) / ry
@@ -436,9 +331,9 @@ class PadsConvertBase:
             d = -1.0
         angle_extent = math.degrees(math.acos(d))
 
-        #if (not sweep_flag ) and (angle_extent>0):
+        # if (not sweep_flag ) and (angle_extent>0):
         #    angle_extent -= 360.0
-        #elif sweep_flag and (angle_extent<0):
+        # elif sweep_flag and (angle_extent<0):
         #    angle_extent += 360.0
 
         if (ux * vy - uy * vx) < 0:
@@ -447,18 +342,37 @@ class PadsConvertBase:
         if not sweep_flag:
             angle_extent -= 360
 
-        angle_extent=-angle_extent
+        angle_extent = -angle_extent
 
-        return [x1,y1,int(start_angle*10), int(angle_extent*10), center_x-rx, center_y-ry,  center_x+rx,center_y+ry ]
+        return [x1, y1, int(start_angle * 10), int(angle_extent * 10), center_x - rx, center_y - ry, center_x + rx,
+                center_y + ry]
+
+    def _limit_decal_name(self, name):
+        """
+        decl_name max 40 char
+        :param name:
+        :return:
+        """
+
+        if len(name) > 40:
+            name = name[0:39]
+            name = name + '_'
+
+        name = name.replace(' ', '_')
+        return name
+
+    def _limit_part_name(self, name: str):
+        # *?:@,
+        name = name.replace(',', '_').replace('@', '_').replace(':', '_').replace('?', '_').replace('*', '_').replace(
+            ' ', '_').replace('Ω±', '_').replace('%', '_')
+        name = name.replace('±', '_').replace('(', '_').replace(')', '_').replace('Ω', '_').replace('±', '_')
+        return name
 
 
 class PadsPcbAsciiWrite(PadsConvertBase):
-    
+
     def __init__(self):
         super(PadsPcbAsciiWrite, self).__init__()
-
-
-
 
     def _get_piece_definition(self, piece, org):
         """
@@ -469,7 +383,7 @@ class PadsPcbAsciiWrite(PadsConvertBase):
 
         ret = ''
 
-        if piece['type']=='TRACK':
+        if piece['type'] == 'TRACK':
             if org is None:
                 org = piece['points'][0]
 
@@ -477,42 +391,43 @@ class PadsPcbAsciiWrite(PadsConvertBase):
             # TODO: linestyle: 0 solid 1-dashed 2-dotted 3-dash dotted
 
             # type numcoords widthhght  linestyle level
-            ret += piece_type + ' ' + str(len(piece['points'])) + ' ' + self._float_format(piece['stroke_width']) + ' 0 ' + \
+            ret += piece_type + ' ' + str(len(piece['points'])) + ' ' + self._float_format(
+                piece['stroke_width']) + ' 0 ' + \
                    piece['layer_id'] + '\n'
-            #points：
+            # points：
             for j in piece['points']:
                 ret += self._float_format(j['param']['x'] - org[0]) + '  ' + self._float_format(
                     j['param']['y'] - org[1]) + '\n'
 
-        elif piece['type']=='CIRCLE':
+        elif piece['type'] == 'CIRCLE':
             # type numcoords widthhght  linestyle level
-            ret += self._list_to_str([ 'CIRCLE' ,2, piece['stroke_width'],0,piece['layer_id'] ])  + '\n'
-            #points：
-            ret += self._list_to_str([piece['cx']-org[0]-piece['r'] ,piece['cy']-org[1]])+ '\n'
-            ret += self._list_to_str([piece['cx'] -org[0]+piece['r'], piece['cy'] - org[1]]) + '\n'
-        elif piece['type']=='ARC':
+            ret += self._list_to_str(['CIRCLE', 2, piece['stroke_width'], 0, piece['layer_id']]) + '\n'
+            # points：
+            ret += self._list_to_str([piece['cx'] - org[0] - piece['r'], piece['cy'] - org[1]]) + '\n'
+            ret += self._list_to_str([piece['cx'] - org[0] + piece['r'], piece['cy'] - org[1]]) + '\n'
+        elif piece['type'] == 'ARC':
 
             # type numcoords widthhght  linestyle level
-            ret += self._list_to_str(['OPEN', 2, piece['stroke_width'],0, piece['layer_id'] ])+'\n'
-            x1=piece['svg'][0]['param']['x']
-            y1=piece['svg'][0]['param']['y']
-            x2=piece['svg'][1]['param']['x']
+            ret += self._list_to_str(['OPEN', 2, piece['stroke_width'], 0, piece['layer_id']]) + '\n'
+            x1 = piece['svg'][0]['param']['x']
+            y1 = piece['svg'][0]['param']['y']
+            x2 = piece['svg'][1]['param']['x']
             y2 = piece['svg'][1]['param']['y']
-            rx=piece['svg'][1]['param']['rx']
+            rx = piece['svg'][1]['param']['rx']
             ry = piece['svg'][1]['param']['ry']
             x_rotation = piece['svg'][1]['param']['x_rotation']
             large_arc_flag = piece['svg'][1]['param']['large_arc_flag']
             sweep_flag = piece['svg'][1]['param']['sweep_flag']
             # calc arc here
-            #x1 y1 ab aa ax1 ay1 ax2 ay2
-            #eg: 1.27   1.778  369 1063 -1.30175 -0.508 1.55575 2.3495
+            # x1 y1 ab aa ax1 ay1 ax2 ay2
+            # eg: 1.27   1.778  369 1063 -1.30175 -0.508 1.55575 2.3495
 
-            #TODO: arc convert calc
-            k=self._arc_convert_calc(x1,y1, x2,y2, rx, ry, x_rotation, large_arc_flag, sweep_flag)
-            k=[k[0]-org[0], k[1]-org[1], k[2],k[3],k[4]-org[0],k[5]-org[1],k[6]-org[0],k[7]-org[1]]
-            #ret += self._float_format(k[0])+(' '*6) + self._float_format(k[1])+(' ' *6) + self._list_to_str(k[2:])+'\n'
-            ret += self._list_to_str(                k) + '\n'
-            ret += self._list_to_str([x2-org[0],y2-org[1]])+'\n'
+            # TODO: arc convert calc
+            k = self._arc_convert_calc(x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag)
+            k = [k[0] - org[0], k[1] - org[1], k[2], k[3], k[4] - org[0], k[5] - org[1], k[6] - org[0], k[7] - org[1]]
+            # ret += self._float_format(k[0])+(' '*6) + self._float_format(k[1])+(' ' *6) + self._list_to_str(k[2:])+'\n'
+            ret += self._list_to_str(k) + '\n'
+            ret += self._list_to_str([x2 - org[0], y2 - org[1]]) + '\n'
         return ret
 
     def _get_text_definition(self, itext, org):
@@ -525,23 +440,23 @@ class PadsPcbAsciiWrite(PadsConvertBase):
             textstring
 
         """
-        #FIXME: 此处文字字体是固定的。 文字大小是根据自己计算出来的
-        font_height = itext['font_size']/10
-        font_width = font_height* len(itext['text'])
-        if    font_width>=50:
-            font_width=49
+        # FIXME: 此处文字字体是固定的。 文字大小是根据自己计算出来的
+        font_height = itext['font_size'] / 10
+        font_width = font_height * len(itext['text'])
+        if font_width >= 50:
+            font_width = 49
 
         font_height = self._float_format(font_height)
         font_width = self._float_format(font_width)
-        ret = self._float_format(itext['x']-org[0])  + ' ' + self._float_format( itext['y']-org[1]) +' ' + itext['rotation'] +' '+ itext['layer_id'] +' ' + str(font_height) +' ' + str(font_width)   + (' M ' if itext['mirror']=='0' else ' N ') +' LEFT DOWN\n'
+        ret = self._float_format(itext['x'] - org[0]) + ' ' + self._float_format(itext['y'] - org[1]) + ' ' + itext[
+            'rotation'] + ' ' + itext['layer_id'] + ' ' + str(font_height) + ' ' + str(font_width) + (
+                  ' M ' if itext['mirror'] == '0' else ' N ') + ' LEFT DOWN\n'
         ret += 'Regular <Romansim Stroke Font>\n'
-        ret += itext['text']+'\n'
-
+        ret += itext['text'] + '\n'
 
         pass
 
         return ret
-
 
     def _get_pin_definition(self, pad, org):
         """
@@ -550,8 +465,8 @@ class PadsPcbAsciiWrite(PadsConvertBase):
         to:
         Tx y nmx nmy pinnumber
         """
-        ll = [pad['cx']-org[0], pad['cy']-org[1], pad['cx']-org[0], pad['cy']-org[1],  pad['number']]
-        ret = '\nT'+self._list_to_str(ll)+'\n'
+        ll = [pad['cx'] - org[0], pad['cy'] - org[1], pad['cx'] - org[0], pad['cy'] - org[1], pad['number']]
+        ret = '\nT' + self._list_to_str(ll) + '\n'
 
         return ret
 
@@ -565,7 +480,7 @@ class PadsPcbAsciiWrite(PadsConvertBase):
         level size shape idia [corner] [drill [plated]]
 
         """
-        ret=''
+        ret = ''
 
         layer_list = []
         if pad['shape'] == 'RECT' or pad['shape'] == 'POLYGON':
@@ -585,34 +500,33 @@ class PadsPcbAsciiWrite(PadsConvertBase):
                 rotation = 179.998
             # layer width shape corner ori length offset
             if 'plated' in pad:
-                if pad['plated']=='Y':
+                if pad['plated'] == 'Y':
                     plated = 'P'
                 else:
-                    plated='N'
+                    plated = 'N'
             else:
-                plated='N'
-
+                plated = 'N'
 
             layer_one = [-2, hh,
                          layer_shape, round(rotation, 3),
-                         ww, 0,0, pad['hole_radius'], plated,rotation, pad['hole_length'],0 ]
+                         ww, 0, 0, pad['hole_radius'], plated, rotation, pad['hole_length'], 0]
 
             layer_list.append(layer_one)
-            if pad['hole_radius']<0.00001:
-                #没有过孔，贴片焊盘
+            if pad['hole_radius'] < 0.00001:
+                # 没有过孔，贴片焊盘
                 layer_list.append([-1, 0,
-                         layer_shape, 0,
-                         0, 0,0])
+                                   layer_shape, 0,
+                                   0, 0, 0])
                 layer_list.append([0, 0,
-                         layer_shape, 0,
-                         0, 0,0])
+                                   layer_shape, 0,
+                                   0, 0, 0])
             else:
                 layer_list.append([-1, hh,
-                         layer_shape, round(rotation, 3),
-                         ww, 0,0])
+                                   layer_shape, round(rotation, 3),
+                                   ww, 0, 0])
                 layer_list.append([0, hh,
-                         layer_shape, round(rotation, 3),
-                         ww, 0,0])
+                                   layer_shape, round(rotation, 3),
+                                   ww, 0, 0])
 
 
         elif pad['shape'] == 'OVAL':
@@ -633,7 +547,7 @@ class PadsPcbAsciiWrite(PadsConvertBase):
                 rotation = 179.998
             # layer width shape ori length offset drill [plated]
             layer_one = [-2, hh, layer_shape,
-                         round(rotation, 3), ww, 0, pad['hole_radius']*2,]
+                         round(rotation, 3), ww, 0, pad['hole_radius'] * 2, ]
 
             layer_list.append(layer_one)
             if pad['hole_radius'] < 0.00001:
@@ -651,13 +565,13 @@ class PadsPcbAsciiWrite(PadsConvertBase):
                 layer_list.append([0, hh,
                                    layer_shape, round(rotation, 3),
                                    ww, 0])
-        else:# pad['shape'] == 'ELLIPSE':
-            if pad['shape']!='ELLIPSE':
+        else:  # pad['shape'] == 'ELLIPSE':
+            if pad['shape'] != 'ELLIPSE':
                 print('decl_add_shape_pad:unknown shape', pad['shape'])
             # round pad
             layer_shape = 'R'
             # layer width shape drillsize（drill只在mount层）
-            layer_one = [-2, pad['height'], layer_shape, pad['hole_radius']*2]
+            layer_one = [-2, pad['height'], layer_shape, pad['hole_radius'] * 2]
 
             layer_list.append(layer_one)
             if pad['hole_radius'] < 0.00001:
@@ -708,21 +622,17 @@ class PadsPcbAsciiWrite(PadsConvertBase):
         plated = ('P' if pad['plated'] == 'Y' else 'N')
         pin_number = pad['number']
 
-
-        #TODO: 此处焊盘，只有Round 一种形状，应该是根据焊盘实际形状，添加其他形状
-        ret='PAD ' + pad['number']+' 3\n'
-        #FIXME: 焊盘尺寸形状，此处未实现
+        # TODO: 此处焊盘，只有Round 一种形状，应该是根据焊盘实际形状，添加其他形状
+        ret = 'PAD ' + pad['number'] + ' 3\n'
+        # FIXME: 焊盘尺寸形状，此处未实现
         # -2 top -1 inner ; 0--bottom
-        #ret += '-2 ' + str(pad['width']) + ' R\n'
-        #ret += '-1 ' + str(pad['width']) + ' R\n'
-        #ret += '-0 ' + str(pad['width']) + ' R\n'
+        # ret += '-2 ' + str(pad['width']) + ' R\n'
+        # ret += '-1 ' + str(pad['width']) + ' R\n'
+        # ret += '-0 ' + str(pad['width']) + ' R\n'
         for i in layer_list:
-            ret += self._list_to_str(i)+'\n'
-
-
+            ret += self._list_to_str(i) + '\n'
 
         return ret
-
 
     def to_partdecal(self, dataStr):
         ret = '''
@@ -742,7 +652,7 @@ class PadsPcbAsciiWrite(PadsConvertBase):
 *REMARK* LEVEL SIZE SHAPE FINORI FINLENGTH FINOFFSET [CORNERRADIUS] [DRILL [PLATED]]
 
 '''
-        part_decl_name_list={}
+        part_decl_name_list = {}
 
         for i in dataStr['shape']:
             if 'type' not in i:
@@ -750,17 +660,15 @@ class PadsPcbAsciiWrite(PadsConvertBase):
             if i['type'] != 'LIB':
                 continue
 
-
             # LIB里面是封装
             ione = i
-            name = ione['custom']['package']
+            name = self._limit_decal_name(ione['custom']['package'])
 
             if name not in part_decl_name_list:
-                part_decl_name_list[name]={'name':name, 'rotation': (0 if i['rotation']=='' else i['rotation']) }
+                part_decl_name_list[name] = {'name': name, 'rotation': (0 if i['rotation'] == '' else i['rotation'])}
             else:
                 # 如果已经存在，则直接跳过
                 continue
-
 
             units = ' I '  # I--mils. M --metric/mm
 
@@ -774,23 +682,23 @@ class PadsPcbAsciiWrite(PadsConvertBase):
                     terminals.append(ipie)
                 elif ipie['type'] == 'TEXT':
                     # text中：L(普通) | N(器件名称) | P(器件编号) | PK(彩饰名)
-                    if ipie['sub_type']=='P' or ipie['sub_type']=='N':
-                        #此信息在part list中处理，此处只保留封装信息，不处理此信息
+                    if ipie['sub_type'] == 'P' or ipie['sub_type'] == 'N':
+                        # 此信息在part list中处理，此处只保留封装信息，不处理此信息
                         continue
                     text.append(ipie)
-                elif (ipie['type'] == 'TRACK'  or ipie['type']=='CIRCLE' or ipie['type'] == 'ARC'  ) and\
-                        (('net' not in ipie) or (ipie['net']=='')) and (int(ipie['layer_id'])<30) :
-                    #TODO 封装内部添加其他类型的曲线
-                    #or ipie['type'] == 'ARC' or ipie['type']=='SVGNODE' or ipie['type']=='SOLIDREGION'
+                elif (ipie['type'] == 'TRACK' or ipie['type'] == 'CIRCLE' or ipie['type'] == 'ARC') and \
+                        (('net' not in ipie) or (ipie['net'] == '')) and (int(ipie['layer_id']) < 30):
+                    # TODO 封装内部添加其他类型的曲线
+                    # or ipie['type'] == 'ARC' or ipie['type']=='SVGNODE' or ipie['type']=='SOLIDREGION'
                     pieces.append(ipie)
                 else:
-                    print('LIB:unknow shape??',ipie)
+                    print('LIB:unknow shape??', ipie)
 
-            #FIXME: 此处label是固定的2个
-            #NAME UNITS ORIX ORIY PIECES TERMINALS STACKS TEXT LABELS
-            head_line = '\n'+name + ' ' + units + ' 0 0 ' + str(len(pieces)) + ' ' + str(len(terminals)) + ' ' + str(
+            # FIXME: 此处label是固定的2个
+            # NAME UNITS ORIX ORIY PIECES TERMINALS STACKS TEXT LABELS
+            head_line = '\n' + name + ' ' + units + ' 0 0 ' + str(len(pieces)) + ' ' + str(len(terminals)) + ' ' + str(
                 len(terminals)) + \
-                        ' ' + str(len(text)) + ' 2'+'\n'
+                        ' ' + str(len(text)) + ' 2' + '\n'
 
             ret += head_line
 
@@ -798,10 +706,9 @@ class PadsPcbAsciiWrite(PadsConvertBase):
                 ret += self._get_piece_definition(ipie, [i['cx'], i['cy']])
 
             for itext in text:
-                ret +='\n'+ self._get_text_definition(itext,[i['cx'], i['cy']])
+                ret += '\n' + self._get_text_definition(itext, [i['cx'], i['cy']])
 
-
-            ret +="""
+            ret += """
 VALUE           0           0   0.000  1        1.27       0.127 N   LEFT   DOWN
 Regular <Romansim Stroke Font>
 Ref.Des.
@@ -810,14 +717,13 @@ Regular <Romansim Stroke Font>
 Part Type
             """
 
+            for iterminals in terminals:
+                ret += self._get_pin_definition(iterminals, [i['cx'], i['cy']])
 
             for iterminals in terminals:
-                ret += self._get_pin_definition(iterminals,[i['cx'], i['cy']])
+                ret += self._get_pad_stack_definition(iterminals, [i['cx'], i['cy']])
 
-            for iterminals in terminals:
-                ret += self._get_pad_stack_definition(iterminals,[i['cx'], i['cy']])
-
-        return ret,part_decl_name_list
+        return ret, part_decl_name_list
 
     def to_layer_data(self, easy):
         """
@@ -927,12 +833,12 @@ BOTTOMPLACEMENT 0
             if clayer['name'] in ['TopLayer', 'BottomLayer']:
                 ret += 'LAYER_TYPE ROUTING\n'
                 ret += 'COMPONENT Y\nROUTABLE Y\n'
-                if clayer['name']=='TopLayer':
-                    ret +='ASSOCIATED_SILK_SCREEN TopSilkLayer\n'
+                if clayer['name'] == 'TopLayer':
+                    ret += 'ASSOCIATED_SILK_SCREEN TopSilkLayer\n'
                     ret += 'ASSOCIATED_PASTE_MASK TopPasteMaskLayer\n'
                     ret += 'ASSOCIATED_SOLDER_MASK TopSolderMaskLayer\n'
-                elif clayer['name']=='BottomLayer':
-                    ret +='ASSOCIATED_SILK_SCREEN BottomSilkLayer\n'
+                elif clayer['name'] == 'BottomLayer':
+                    ret += 'ASSOCIATED_SILK_SCREEN BottomSilkLayer\n'
                     ret += 'ASSOCIATED_PASTE_MASK BottomPasteMaskLayer\n'
                     ret += 'ASSOCIATED_SOLDER_MASK BottomSolderMaskLayer\n'
 
@@ -960,8 +866,6 @@ BOTTOMPLACEMENT 0
 
         return ret
 
-
-
     def _to_lines_data(self, easy):
         """
         header line
@@ -987,35 +891,31 @@ BOTTOMPLACEMENT 0
         line_index = 0
         for i in easy.easy_data['dataStr']['shape']:
             line_index += 1
-            if ('type' in i) and  (i['type'] == 'TRACK') and (len(i['net'])==0):
+            if ('type' in i) and (i['type'] == 'TRACK') and (len(i['net']) == 0):
                 # 此处只记录没有net属性的line，有net属性的，需要在route中记录
                 name = 'LLLL' + str(line_index)
                 linetype = 'LINES'
 
-                firstxy=[i['points'][0]['param']['x'],i['points'][0]['param']['y']]
+                firstxy = [i['points'][0]['param']['x'], i['points'][0]['param']['y']]
                 ret += name + ' ' + linetype + ' ' + self._float_format(firstxy[0]) + ' ' + self._float_format(
                     firstxy[1]) + ' 1 0\n'
 
                 ret += self._get_piece_definition(i, firstxy)
 
-
                 ret += '\n'
 
-            elif ('type' in i) and  (i['type'] == 'ARC') and (len(i['net'])==0):
+            elif ('type' in i) and (i['type'] == 'ARC') and (len(i['net']) == 0):
                 # 此处只记录没有net属性的line，有net属性的，需要在route中记录
                 name = 'ARCARC' + str(line_index)
                 linetype = 'LINES'
 
-                firstxy=[i['svg'][0]['param']['x'],i['svg'][0]['param']['y']]
+                firstxy = [i['svg'][0]['param']['x'], i['svg'][0]['param']['y']]
                 ret += name + ' ' + linetype + ' ' + self._float_format(firstxy[0]) + ' ' + self._float_format(
                     firstxy[1]) + ' 1 0\n'
 
                 ret += self._get_piece_definition(i, firstxy)
 
-
                 ret += '\n'
-
-
 
         return ret
 
@@ -1054,20 +954,20 @@ BOTTOMPLACEMENT 0
         for i in dataStr['shape']:
             if 'type' not in i:
                 continue
-            if i['type']!='TEXT':
+            if i['type'] != 'TEXT':
                 continue
 
-            i=i
+            i = i
             # 难道
-            text_height = i['font_size']/100
-            text_width = text_height* len(i['text'])/2
-            if text_width>50:
-                text_width=50
-            ret +=self._list_to_str([i['x'],i['y'], i['rotation'], i['layer_id'], text_height,text_width, 'M' if i['mirror'] else 'N', 'LEFT','DOWN',0])+'\n'
-            ret += self._list_to_str(['Regular','<Romansim Stroke Font>'])+'\n'
-            ret += i['text']+'\n'
-
-
+            text_height = i['font_size'] / 100
+            text_width = text_height * len(i['text']) / 2
+            if text_width > 50:
+                text_width = 50
+            ret += self._list_to_str(
+                [i['x'], i['y'], i['rotation'], i['layer_id'], text_height, text_width, 'M' if i['mirror'] else 'N',
+                 'LEFT', 'DOWN', 0]) + '\n'
+            ret += self._list_to_str(['Regular', '<Romansim Stroke Font>']) + '\n'
+            ret += i['text'] + '\n'
 
         return ret
 
@@ -1120,8 +1020,7 @@ MICROVIA         0.35 3
 
         """
 
-
-        ret="""
+        ret = """
 
 *PARTTYPE*   ITEMS
 
@@ -1132,17 +1031,18 @@ MICROVIA         0.35 3
 *REMARK* PINNUMBER
 
 """
-        part_type_name=[]
+        part_type_name = []
         for i in dataStr['shape']:
             if 'type' not in i:
                 continue
-            if i['type']!='LIB':
+            if i['type'] != 'LIB':
                 continue
             if i['custom']['package'] in part_type_name:
                 continue
-            part_type_name.append(i['custom']['package'])
-            ret +=i['custom']['package'] +' ' + i['custom']['package']  +' UND  0   0   0     0 Y\n'
 
+            package_name = self._limit_decal_name(i['custom']['package'])
+            part_type_name.append(package_name)
+            ret += package_name + ' ' + package_name + ' UND  0   0   0     0 Y\n'
 
         return ret
 
@@ -1170,39 +1070,39 @@ MICROVIA         0.35 3
         for i in dataStr['shape']:
             if 'type' not in i:
                 continue
-            if i['type']!='LIB':
+            if i['type'] != 'LIB':
                 continue
 
-            decl_name = i['custom']['package']
-            #text中：L(普通) | N(器件名称) | P(器件编号) | PK(彩饰名)
+            decl_name = self._limit_decal_name( i['custom']['package'])
+            # text中：L(普通) | N(器件名称) | P(器件编号) | PK(彩饰名)
             for j in i['shape']:
-                if j['type']=='TEXT' and j['sub_type']=='P':
+                if j['type'] == 'TEXT' and j['sub_type'] == 'P':
                     rotation = i['rotation']
-                    if rotation =='':
-                        rotation=0
-                    if decl_name in  decl_info:
+                    if rotation == '':
+                        rotation = 0
+                    if decl_name in decl_info:
                         rotation = float(rotation) - float(decl_info[decl_name]['rotation'])
                     # rotation应该是0-360度之间，包括0，不包括360
-                    while rotation<0:
+                    while rotation < 0:
                         rotation += 360
-                    if rotation>360:
+                    if rotation > 360:
                         print('part rotation error:', rotation)
-                        rotation=0
+                        rotation = 0
 
-                    ret +='\n'+self._list_to_str( [j['text'], i['custom']['package'], i['cx'] , i['cy'] , rotation ,'U','N' ,'0 -1 0 -1 1'])
-                    ret +='\n'
-                    ret +="""
+                    ret += '\n' + self._list_to_str(
+                        [j['text'], decl_name, i['cx'], i['cy'], rotation, 'U', 'N', '0 -1 0 -1 1'])
+                    ret += '\n'
+                    ret += """
 VALUE        0.34       -0.36 180.000  1        12.7       1.27 N   LEFT   DOWN
 Regular <Romansim Stroke Font>
 Ref.Des.
 
 """
-                    tmp="""
+                    tmp = """
 VALUE           0           0   0.000  1        12.7       1.27 N   LEFT     UP
 Regular <Romansim Stroke Font>
 Part Type
 """
-
 
         return ret
 
@@ -1222,8 +1122,7 @@ R25.2 RIGHT.2
 **发现输入警告**
         """
 
-
-        ret ='*NETLIST*\n'
+        ret = '*NETLIST*\n'
 
         nets = self._collect_net_names(dataStr)
 
@@ -1238,29 +1137,29 @@ R25.2 RIGHT.2
         return ret
 
     def _collect_net_names(self, dataStr):
-        nets={}
+        nets = {}
         for i in dataStr['shape']:
             if 'type' not in i:
                 continue
-            if i['type']!='LIB':
+            if i['type'] != 'LIB':
                 continue
             for j in i['shape']:
-                if j['type']=='TEXT' and j['sub_type']=='P':
+                if j['type'] == 'TEXT' and j['sub_type'] == 'P':
                     part_name = j['text']
 
-                if j['type']!='PAD':
+                if j['type'] != 'PAD':
                     continue
-                if len(j['net'])==0:
+                if len(j['net']) == 0:
                     continue
                 if j['net'] not in nets:
-                    nets[j['net']]=[]
+                    nets[j['net']] = []
 
-                net_connected = part_name+'.'+ j['number']
+                net_connected = part_name + '.' + j['number']
                 if net_connected not in nets[j['net']]:
-                    nets[j['net']].append({'name':part_name+'.'+ j['number'], "coord":[j['cx'], j['cy']], 'layer_id':j['layer_id']})
+                    nets[j['net']].append(
+                        {'name': part_name + '.' + j['number'], "coord": [j['cx'], j['cy']], 'layer_id': j['layer_id']})
 
         return nets
-
 
     def to_pads_route_definition(self, dataStr):
         """
@@ -1291,20 +1190,23 @@ C1.1 R1.1
         nets = self._collect_net_names(dataStr)
 
         for i in nets:
-            if len(nets[i])<2:
-                #只有1个脚的网络无法做链接，忽略
+            if len(nets[i]) < 2:
+                # 只有1个脚的网络无法做链接，忽略
                 continue
-            ret += '*SIGNAL* '+i+'\n'
+            ret += '*SIGNAL* ' + i + '\n'
             for index, j in enumerate(nets[i]):
-                if index==0:
+                if index == 0:
                     continue
-                ret += self._list_to_str([nets[i][index-1]['name'], nets[i][index]['name']])+'\n'
+                ret += self._list_to_str([nets[i][index - 1]['name'], nets[i][index]['name']]) + '\n'
 
-                ret += self._list_to_str([nets[i][index-1]['coord'][0], nets[i][index-1]['coord'][1], nets[i][index-1]['layer_id'], 4,0x700,'THERMAL'])+'\n'
                 ret += self._list_to_str(
-                        [nets[i][index]['coord'][0], nets[i][index]['coord'][1], nets[i][index]['layer_id'], 4, 0x700,'THERMAL'])+'\n'
+                    [nets[i][index - 1]['coord'][0], nets[i][index - 1]['coord'][1], nets[i][index - 1]['layer_id'], 4,
+                     0x700, 'THERMAL']) + '\n'
+                ret += self._list_to_str(
+                    [nets[i][index]['coord'][0], nets[i][index]['coord'][1], nets[i][index]['layer_id'], 4, 0x700,
+                     'THERMAL']) + '\n'
 
-            ret +='\n'
+            ret += '\n'
 
         return ret
 
@@ -1327,12 +1229,12 @@ C1.1 R1.1
 
         reti, part_decl_info = self.to_partdecal(easy.easy_data['dataStr'])
         ret += reti
-        
+
         ret += self.to_pads_via_definition(easy.easy_data['dataStr'])
 
         ret += self.to_pads_jumper_definition(easy.easy_data['dataStr'])
         ret += self.to_pads_parttype_definition(easy.easy_data['dataStr'])
-        ret += self.to_pads_partlist_definition(easy.easy_data['dataStr'],part_decl_info)
+        ret += self.to_pads_partlist_definition(easy.easy_data['dataStr'], part_decl_info)
         ret += self.to_pads_connection_definition(easy.easy_data['dataStr'])
         ret += self.to_pads_route_definition(easy.easy_data['dataStr'])
         ret += self.to_pads_copper_pour_definition(easy.easy_data['dataStr'])
@@ -1353,7 +1255,6 @@ C1.1 R1.1
         ret += self.to_layer_data(easy)
 
         return ret
-
 
 
 class PadsLibAsciiWrite(PadsConvertBase):
@@ -1380,30 +1281,17 @@ class PadsLibAsciiWrite(PadsConvertBase):
 
         self.PADS_TOP_SOLDERM_LAYER = '21'
         self.PADS_BOTTOM_SOLDERM_LAYER = '28'
-        self.layer_id_to_pads={
-            self.EASY_TOP_SILK_LAYER:self.PADS_TOP_SILK_LAYER,
-            self.EASY_BOTTOM_SILK_LAYER:self.PADS_BOTTOM_SILK_LAYER,
-            self.EASY_TOP_LAYER:self.PADS_TOP_LAYER,
-            self.EASY_BOTTOM_LAYER:self.PADS_BOTTOM_LAYER,
-            self.EASY_TOP_SOLDERM_LAYER:self.PADS_TOP_SOLDERM_LAYER,
-            self.EASY_TOP_PASTEM_LAYER:self.PADS_TOP_PASTEM_LAYER,
+        self.layer_id_to_pads = {
+            self.EASY_TOP_SILK_LAYER: self.PADS_TOP_SILK_LAYER,
+            self.EASY_BOTTOM_SILK_LAYER: self.PADS_BOTTOM_SILK_LAYER,
+            self.EASY_TOP_LAYER: self.PADS_TOP_LAYER,
+            self.EASY_BOTTOM_LAYER: self.PADS_BOTTOM_LAYER,
+            self.EASY_TOP_SOLDERM_LAYER: self.PADS_TOP_SOLDERM_LAYER,
+            self.EASY_TOP_PASTEM_LAYER: self.PADS_TOP_PASTEM_LAYER,
             self.EASY_BOTTOM_SOLDERM_LAYER: self.PADS_BOTTOM_SOLDERM_LAYER,
             self.EASY_BOTTOM_PASTEM_LAYER: self.PADS_BOTTOM_PASTEM_LAYER
 
-
         }
-
-    def _limit_decal_name(self, name):
-        """
-        decl_name max 40 char
-        :param name:
-        :return:
-        """
-
-        if len(name) > 40:
-            name = name[0:39]
-            name = name + '_'
-        return name
 
     def _add_pad_stack(self, decl_name, pin_number, numberlayers, layer_list, plated, drill, drlori, drllen, drloff):
         """
@@ -1469,88 +1357,81 @@ class PadsLibAsciiWrite(PadsConvertBase):
         """
         # PAD pin numlayers plated drill [drlori drllen drloff]
         # PAD pin numlayers plated drill [drlori drllen drloff]
-        out_str=''
+        out_str = ''
         out_str += "PAD " + self._list_to_str([pin_number, numberlayers, plated, drill, drlori, drllen, drloff])
         out_str += '\n'
         for j in layer_list:
             out_str += self._list_to_str(j) + '\n'
         return out_str
 
-    def _limit_part_name(self, name: str):
-        # *?:@,
-        name = name.replace(',', '_').replace('@', '_').replace(':', '_').replace('?', '_').replace('*', '_').replace(
-            ' ', '_').replace('Ω±', '_').replace('%', '_')
-        name = name.replace('±', '_').replace('(', '_').replace(')', '_').replace('Ω', '_').replace('±', '_')
-        return name
-
     def add_pcb_decal_attrib_label(self, decal_name, attr_name, rel_x, rel_y, rotation,
-                                       mirror, height, width, layer, just, flags, fontinfo, textstring):
-            """
-            x y rotation mirror height width layer just flags fontinfo textstring
-            :param decal_name:
-            :param attr_name:
-            :param rel_x:Coordinates of the text string location relative to the origin of the schematic
-            :param rel_y:
-            :param rotation:Orientation of the text in degrees
-            :param mirror:Flag indicating text mirroring in PADS Layout.0 = not mirrored, 1 = mirrored about the y-axis when viewed with zero
-    orientation.
-            :param height:Height of text Values range from 0.01 to 1.0 inches, expressed in the selected units type
-            :param width:Width of text in mils Values range from 0.001 to 0.050 inches, expressed in the selected units type
-            :param layer: Numeric layer number for use in PADS Layout.Values range from 0 to 250. A layer value of zero means all layers.
-            :param just:Justification of the attribute text string
-                    Value is the decimal equivalent of a bit string as follows:
-                    Bits 0 to 3 encode a four-bit value for horizontal justification with the following
-                    values:
-                    0 = Left justified
-                    1 = Center justified
-                    2 = Right justified
-                    Bits 4 to 7 encode a four-bit value for vertical justification with the following
-                    values:
-                    0 = Bottom justified
-                    1 = Middle justified
-                    2 = Top justified.
-                    Allowed values for 0 and 90 degree rotation are as follows:
-                    Bottom left = 0
-                    Bottom center = 1
-                    Bottom right = 2
-                    Middle left = 16
-                    Middle center= 17
-                    Middle right = 18
-                    Top left = 32
-                    Top center = 33
-                    Top right = 34
-            :param flags:Type of label, name/value visibility, and right reading status
-                    Values are the decimal equivalent of an eight-bit binary value with bit fields
-                    defined as follows:
-                    Bits 0 to 2 contain a numeric value to define the label type:
-                    0 = General attribute label
-                    1 = Reference designator
-                    2 = Part type
-                    Bit 3 set indicates the label is right reading and displayed at the nearest 90-degree
-                    orientation.
-                    Bit 4 set indicates label is right reading but display is not constrained to a 90-
-                    degree orientation.
-                    Bit 5 set indicates that the attribute value is displayed.
-                    Bit 6 set indicates that the short version of the attribute name is displayed.
-                    Bit 7 set indicates that the full structured attribute name is displayed.
-            :param fontinfo:Font information for the attribute label text
-            :param textstring: Name of the attribute whose location is being defined
-                            The reserved names “REF-DES” and “PARTTYPE” refer to reference
-                            designator and part type labels
-                            Up to 255 characters, spaces allowed.
-            :return:
-            """
-            # 0     0     0     0 1.27  0.127 1 0 34 "Regular <Romansim Stroke Font>"
-            # x y rotation mirror height width layer just flags fontinfo textstring
-            out_str=''
-            out_str += self._list_to_str([rel_x,rel_y,rotation, mirror, height, width, layer,just,flags,'"'+fontinfo+'"'])+'\n'
-            out_str += textstring + '\n'
+                                   mirror, height, width, layer, just, flags, fontinfo, textstring):
+        """
+        x y rotation mirror height width layer just flags fontinfo textstring
+        :param decal_name:
+        :param attr_name:
+        :param rel_x:Coordinates of the text string location relative to the origin of the schematic
+        :param rel_y:
+        :param rotation:Orientation of the text in degrees
+        :param mirror:Flag indicating text mirroring in PADS Layout.0 = not mirrored, 1 = mirrored about the y-axis when viewed with zero
+orientation.
+        :param height:Height of text Values range from 0.01 to 1.0 inches, expressed in the selected units type
+        :param width:Width of text in mils Values range from 0.001 to 0.050 inches, expressed in the selected units type
+        :param layer: Numeric layer number for use in PADS Layout.Values range from 0 to 250. A layer value of zero means all layers.
+        :param just:Justification of the attribute text string
+                Value is the decimal equivalent of a bit string as follows:
+                Bits 0 to 3 encode a four-bit value for horizontal justification with the following
+                values:
+                0 = Left justified
+                1 = Center justified
+                2 = Right justified
+                Bits 4 to 7 encode a four-bit value for vertical justification with the following
+                values:
+                0 = Bottom justified
+                1 = Middle justified
+                2 = Top justified.
+                Allowed values for 0 and 90 degree rotation are as follows:
+                Bottom left = 0
+                Bottom center = 1
+                Bottom right = 2
+                Middle left = 16
+                Middle center= 17
+                Middle right = 18
+                Top left = 32
+                Top center = 33
+                Top right = 34
+        :param flags:Type of label, name/value visibility, and right reading status
+                Values are the decimal equivalent of an eight-bit binary value with bit fields
+                defined as follows:
+                Bits 0 to 2 contain a numeric value to define the label type:
+                0 = General attribute label
+                1 = Reference designator
+                2 = Part type
+                Bit 3 set indicates the label is right reading and displayed at the nearest 90-degree
+                orientation.
+                Bit 4 set indicates label is right reading but display is not constrained to a 90-
+                degree orientation.
+                Bit 5 set indicates that the attribute value is displayed.
+                Bit 6 set indicates that the short version of the attribute name is displayed.
+                Bit 7 set indicates that the full structured attribute name is displayed.
+        :param fontinfo:Font information for the attribute label text
+        :param textstring: Name of the attribute whose location is being defined
+                        The reserved names “REF-DES” and “PARTTYPE” refer to reference
+                        designator and part type labels
+                        Up to 255 characters, spaces allowed.
+        :return:
+        """
+        # 0     0     0     0 1.27  0.127 1 0 34 "Regular <Romansim Stroke Font>"
+        # x y rotation mirror height width layer just flags fontinfo textstring
+        out_str = ''
+        out_str += self._list_to_str(
+            [rel_x, rel_y, rotation, mirror, height, width, layer, just, flags, '"' + fontinfo + '"']) + '\n'
+        out_str += textstring + '\n'
 
-            return out_str
-
+        return out_str
 
     def _add_txt(self, decl_name, text, x, y, rotation, layer, height, width, mirror, fontinfo, just=0, drwnum=0,
-                field=0):
+                 field=0):
         # x y rotation layer height width mirror just drwnum field fontinfo
         out_str = ''
 
@@ -1561,6 +1442,7 @@ class PadsLibAsciiWrite(PadsConvertBase):
         out_str += text
         out_str += '\n'
         return out_str
+
     def _add_pieces(self, decl_name, typ, numcoord, width, layer, linestyle, coord_list):
         """
         type numcoord width layer linestyle
@@ -1598,25 +1480,24 @@ class PadsLibAsciiWrite(PadsConvertBase):
 
         ret = ''
 
-        #FIXME: 此处坐标点数需要在内部计算，而不是外部传入
+        # FIXME: 此处坐标点数需要在内部计算，而不是外部传入
         # 因为
 
-        numcoord=0
+        numcoord = 0
         is_arc = 0
-        if type(coord_list[0])==type([]):
+        if type(coord_list[0]) == type([]):
             # 兼容老的坐标形式，内部是坐标点
             numcoord = len(coord_list)
         else:
-            #新的格式，内部是dict
+            # 新的格式，内部是dict
             for j in coord_list:
                 if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
-                    numcoord+=1
-                if j['cmd']=='A':
-                    #arc
+                    numcoord += 1
+                if j['cmd'] == 'A':
+                    # arc
                     is_arc = 1
-                    numcoord=3
+                    numcoord = 3
                     break
-
 
         ret += self._list_to_str([typ, numcoord, width, layer, linestyle])
         ret += '\n'
@@ -1642,32 +1523,33 @@ class PadsLibAsciiWrite(PadsConvertBase):
             k = self._arc_convert_calc(x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag)
             # k = [k[0] - org[0], k[1] - org[1], k[2], k[3], k[4] - org[0], k[5] - org[1], k[6] - org[0], k[7] - org[1]]
             # ret += self._float_format(k[0])+(' '*6) + self._float_format(k[1])+(' ' *6) + self._list_to_str(k[2:])+'\n'
-            k3=k[3]
+            k3 = k[3]
             k = [k[0], k[1], k[2], k3, k[4], k[5], k[6], k[7]]
 
             ret += self._list_to_str(k) + '\n'
-            ret += self._list_to_str([x2 , y2 ]) + '\n'
+            ret += self._list_to_str([x2, y2]) + '\n'
 
         else:
             for j in coord_list:
-                if type(j)==type([]):
-                    ret += self._list_to_str(j)+'\n'
+                if type(j) == type([]):
+                    ret += self._list_to_str(j) + '\n'
                 else:
                     if ('param' in j) and ('x' in j['param']) and ('y' in j['param']):
-                        ret += self._list_to_str([j['param']['x'],j['param']['y']])+'\n'
+                        ret += self._list_to_str([j['param']['x'], j['param']['y']]) + '\n'
 
         return ret
 
     def _add_terminal(self, decl_name, pin_number, rx, ry, label_rx, label_ry):
         out_str = ''
-        out_str += 'T' + self._list_to_str([rx, ry, label_rx, label_ry,pin_number])
+        out_str += 'T' + self._list_to_str([rx, ry, label_rx, label_ry, pin_number])
         out_str += '\n'
         return out_str
 
-    def _decal_add_shape_pad(self, dshape, pakage_name,pieces,terminals,stacks ):
+    def _decal_add_shape_pad(self, dshape, pakage_name, pieces, terminals, stacks):
         package_decl_name = pakage_name
 
-        termo=self._add_terminal(package_decl_name, dshape['number'], dshape['cx'], dshape['cy'], dshape['cx'], dshape['cy'])
+        termo = self._add_terminal(package_decl_name, dshape['number'], dshape['cx'], dshape['cy'], dshape['cx'],
+                                   dshape['cy'])
         terminals.append(termo)
 
         numberlayers = 3
@@ -1726,8 +1608,9 @@ class PadsLibAsciiWrite(PadsConvertBase):
             layer_one = [-2, round((ww + hh) / 20, 5), layer_shape]
             # layer width shape corner ori length offset
             # layer_one = [-2, hh, layer_shape, 0, rotation, ww, 0]
-            piece_one = self._add_pieces(package_decl_name, 'COPCLS', len(dshape['points']), '10', 1, int(dshape['number']) - 1,
-                            dshape['points'])
+            piece_one = self._add_pieces(package_decl_name, 'COPCLS', len(dshape['points']), '10', 1,
+                                         int(dshape['number']) - 1,
+                                         dshape['points'])
             pieces.append(piece_one)
         else:
             print('decl_add_shape_pad:unknown shape', dshape['shape'])
@@ -1752,17 +1635,17 @@ class PadsLibAsciiWrite(PadsConvertBase):
             print('layer_list', layer_list)
 
         stacko = self._add_pad_stack(package_decl_name, pin_number=dshape['number'], numberlayers=numberlayers,
-                        layer_list=layer_list, plated=('P' if dshape['plated'] == 'Y' else 'N'),
-                        drill=2 * dshape['hole_radius'], drlori='', drllen='', drloff='')
+                                     layer_list=layer_list, plated=('P' if dshape['plated'] == 'Y' else 'N'),
+                                     drill=2 * dshape['hole_radius'], drlori='', drllen='', drloff='')
         stacks.append(stacko)
 
     def _decal_add_shape_circle(self, dshape, pieces, pakage_name):
-        if dshape['layer_id'] in self.layer_id_to_pads:# easy.TOP_SILK_LAYER:  # 顶层丝印层
+        if dshape['layer_id'] in self.layer_id_to_pads:  # easy.TOP_SILK_LAYER:  # 顶层丝印层
             piece_one = self._add_pieces(pakage_name, typ='CIRCLE', numcoord=2,
                                          width=dshape['stroke_width'],
                                          layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
                                          coord_list=[[round(dshape['cx'] + dshape['r'], 5), dshape['cy']],
-                                        [round(dshape['cx'] - dshape['r'], 5), dshape['cy']]])
+                                                     [round(dshape['cx'] - dshape['r'], 5), dshape['cy']]])
             pieces.append(piece_one)
         return pieces
 
@@ -1777,7 +1660,8 @@ class PadsLibAsciiWrite(PadsConvertBase):
 
     def _decal_add_shape_solidregion(self, dshape, pieces, pakage_name):
 
-        if dshape['layer_id'] in self.layer_id_to_pads:  # 12-document 99-componentshapelayer.shape layer 100-leadshapelayer
+        if dshape[
+            'layer_id'] in self.layer_id_to_pads:  # 12-document 99-componentshapelayer.shape layer 100-leadshapelayer
             piece_one = self._add_pieces(pakage_name, typ='OPEN', numcoord=len(dshape['svg']),
                                          width=5,
                                          layer=26, linestyle=-1, coord_list=dshape['svg'])
@@ -1788,19 +1672,20 @@ class PadsLibAsciiWrite(PadsConvertBase):
         if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
             piece_one = self._add_pieces(pakage_name, typ='CLOSED', numcoord=5,
                                          width=dshape['stroke_width'],
-                                         layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1, coord_list=[[dshape['x'], dshape['y']],
-                                                                                 [dshape['x'],
-                                                                                  round(dshape['y'] - dshape['height'],
-                                                                                        5)],
-                                                                                 [round(dshape['x'] + dshape['width'],
-                                                                                        5),
-                                                                                  round(dshape['y'] - dshape['height'],
-                                                                                        5)],
-                                                                                 [round(dshape['x'] + dshape['width'],
-                                                                                        5),
-                                                                                  round(dshape['y'], 5)],
-                                                                                 [dshape['x'], dshape['y']],
-                                                                                 ])
+                                         layer=self.layer_id_to_pads[dshape['layer_id']], linestyle=-1,
+                                         coord_list=[[dshape['x'], dshape['y']],
+                                                     [dshape['x'],
+                                                      round(dshape['y'] - dshape['height'],
+                                                            5)],
+                                                     [round(dshape['x'] + dshape['width'],
+                                                            5),
+                                                      round(dshape['y'] - dshape['height'],
+                                                            5)],
+                                                     [round(dshape['x'] + dshape['width'],
+                                                            5),
+                                                      round(dshape['y'], 5)],
+                                                     [dshape['x'], dshape['y']],
+                                                     ])
 
             pieces.append(piece_one)
         return pieces
@@ -1815,10 +1700,11 @@ class PadsLibAsciiWrite(PadsConvertBase):
         """
         if dshape['layer_id'] in self.layer_id_to_pads:  # 顶层丝印层
             txt_one = self._add_txt(pakage_name, text=dshape['text'], x=dshape['x'], y=dshape['y'],
-                         rotation=dshape['rotation'],
-                         layer=self.layer_id_to_pads[dshape['layer_id']], height=dshape['font_size'],
-                         width=50 if dshape['font_size'] > 50 else dshape['font_size'], mirror=dshape['mirror'],
-                         fontinfo="\"Regular 宋体\"")
+                                    rotation=dshape['rotation'],
+                                    layer=self.layer_id_to_pads[dshape['layer_id']], height=dshape['font_size'],
+                                    width=50 if dshape['font_size'] > 50 else dshape['font_size'],
+                                    mirror=dshape['mirror'],
+                                    fontinfo="\"Regular 宋体\"")
 
             txts.append(txt_one)
         return txts
@@ -1833,7 +1719,7 @@ class PadsLibAsciiWrite(PadsConvertBase):
             pieces.append(piece_one)
         return pieces
 
-    def dump_pcb_decal(self,easy_list):
+    def dump_pcb_decal(self, easy_list):
         """
         A PCB decal consists of the following parts:
         • Header line
@@ -1851,69 +1737,69 @@ class PadsLibAsciiWrite(PadsConvertBase):
         for i in easy_list:
             if (i.doc_type == 'SCHLIB') and i.package_detail is not None:
                 i = i.package_detail
-            if i.doc_type!='PCBLIB':
+            if i.doc_type != 'PCBLIB':
                 # 只处理pcblib的格式，其他格式不处理
                 continue
 
             decal_name = self._limit_decal_name(i.easy_data['title'])
             unit = 'I'
-            x=0
-            y=0
-            attrs=[]
-            labels=[]
-            pieces=[]
-            txt=[]
-            terminals=[]
-            stacks=[]
-            maxlayers=0
+            x = 0
+            y = 0
+            attrs = []
+            labels = []
+            pieces = []
+            txt = []
+            terminals = []
+            stacks = []
+            maxlayers = 0
 
             ############################
             # 此处要先统计此封装中的各内容
             one_label = self.add_pcb_decal_attrib_label(decal_name=decal_name, attr_name='', rel_x=0, rel_y=0,
-                                            rotation=0, mirror=0, height=50, width=5, layer=26,
-                                            just=0, flags=33, fontinfo='Regular <Romansim Stroke Font>',
-                                            textstring='PART-TYPE')
+                                                        rotation=0, mirror=0, height=50, width=5, layer=26,
+                                                        just=0, flags=33, fontinfo='Regular <Romansim Stroke Font>',
+                                                        textstring='PART-TYPE')
             labels.append(one_label)
             one_label = self.add_pcb_decal_attrib_label(decal_name=decal_name, attr_name='', rel_x=0, rel_y=0,
-                                            rotation=0, mirror=0, height=50, width=5, layer=26,
-                                            just=0, flags=34, fontinfo='Regular <Romansim Stroke Font>',
-                                            textstring='REF-DES')
+                                                        rotation=0, mirror=0, height=50, width=5, layer=26,
+                                                        just=0, flags=34, fontinfo='Regular <Romansim Stroke Font>',
+                                                        textstring='REF-DES')
             labels.append(one_label)
 
             for dshape in i.easy_data['dataStr']['shape']:
                 if dshape['type'] == 'CIRCLE':
-                    pieces = self._decal_add_shape_circle(dshape, pieces,decal_name)
+                    pieces = self._decal_add_shape_circle(dshape, pieces, decal_name)
                 elif dshape['type'] == 'TRACK':
-                    pieces = self._decal_add_shape_track(dshape, pieces,decal_name)
+                    pieces = self._decal_add_shape_track(dshape, pieces, decal_name)
                 elif dshape['type'] == 'PAD':
-                    self._decal_add_shape_pad(dshape,decal_name,pieces,terminals, stacks)
+                    self._decal_add_shape_pad(dshape, decal_name, pieces, terminals, stacks)
                 elif dshape['type'] == 'SOLIDREGION':
-                    self._decal_add_shape_solidregion(dshape, pieces,decal_name)
+                    self._decal_add_shape_solidregion(dshape, pieces, decal_name)
                 elif dshape['type'] == 'ARC':
                     # TODO: ARC功能未实现
-                    self._decal_add_shape_arc(dshape, pieces,decal_name)
+                    self._decal_add_shape_arc(dshape, pieces, decal_name)
                 elif dshape['type'] == 'RECT':
-                    self._decal_add_shape_rect(dshape, pieces,decal_name)
+                    self._decal_add_shape_rect(dshape, pieces, decal_name)
                 elif dshape['type'] == 'TEXT':
                     self._decal_add_shape_text(dshape, txt, decal_name)
 
                 else:
                     pass
-                    print('unknown shape to pads', i,dshape)
+                    print('unknown shape to pads', i, dshape)
 
             ############################
-
 
             # name u x y attrs labels pieces txt terminals stacks maxlayers
             # TIMESTAMP year.month.day.hour.minute.second
 
-            ret +='\n'
-            ret += self._list_to_str([decal_name,unit, x,y,len(attrs), len(labels), len(pieces), len(txt), len(terminals), len(stacks), maxlayers])+'\n'
+            ret += '\n'
+            ret += self._list_to_str(
+                [decal_name, unit, x, y, len(attrs), len(labels), len(pieces), len(txt), len(terminals), len(stacks),
+                 maxlayers]) + '\n'
             dt = datetime.datetime.fromtimestamp(i.easy_data['updateTime'])
 
-            ret += 'TIMESTAMP '+self._list_to_str([dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second],'.')+'\n'
-
-
+            ret += 'TIMESTAMP ' + self._list_to_str([dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second],
+                                                    '.') + '\n'
 
             ##############Decal attributes
             for i in attrs:
@@ -1922,7 +1808,6 @@ class PadsLibAsciiWrite(PadsConvertBase):
             ##############Attribute Labels Format
             for i in labels:
                 ret += i
-
 
             for i in pieces:
                 ret += i
@@ -1939,14 +1824,15 @@ class PadsLibAsciiWrite(PadsConvertBase):
                 ret += i
 
         return ret
+
     def to_pcb_decals(self, easy_list):
-        ret ='*PADS-LIBRARY-PCB-DECALS-V9*\n\n'
-        ret+= self.dump_pcb_decal(easy_list)
+        ret = '*PADS-LIBRARY-PCB-DECALS-V9*\n\n'
+        ret += self.dump_pcb_decal(easy_list)
 
         ret += '\n*END*\n'
         return ret
 
-    def dump_part_types(self,easy_list):
+    def dump_part_types(self, easy_list):
         """
         Each part type entry consists of the following parts:
         • Part type header lines
@@ -1969,15 +1855,15 @@ class PadsLibAsciiWrite(PadsConvertBase):
             if easy.doc_type != 'SCHLIB':
                 continue
             if easy.package_detail is None:
-                #无封装
+                # 无封装
                 continue
             part_name = easy.easy_data['title']
             decal_name = easy.package_detail.easy_data['title']
 
-            #(self, name, decl_name, unit, dt, logfam='UND', attrs=0, gates=0, sigpins=0, pinmap=0, flag=0):
+            # (self, name, decl_name, unit, dt, logfam='UND', attrs=0, gates=0, sigpins=0, pinmap=0, flag=0):
             out_str += self._list_to_str(
                 [self._limit_part_name(part_name), self._limit_decal_name(decal_name), 'I', logfam,
-                 attrs, gates, sigpins, pinmap, flag])+'\n'
+                 attrs, gates, sigpins, pinmap, flag]) + '\n'
 
             dt = datetime.datetime.fromtimestamp(easy.easy_data['updateTime'])
 
@@ -1986,14 +1872,12 @@ class PadsLibAsciiWrite(PadsConvertBase):
                  dt.second], '.') + '\n'
 
         return out_str
+
     def to_part_types(self, easy_list):
-        ret ='*PADS-LIBRARY-PART-TYPES-V9*\n'
+        ret = '*PADS-LIBRARY-PART-TYPES-V9*\n'
         ret += self.dump_part_types(easy_list)
         ret += '*END*\n'
         return ret
 
-
-
     def easyeda_to_pads_ascii(self, easy_list):
         return self.to_pcb_decals(easy_list), self.to_part_types(easy_list)
-

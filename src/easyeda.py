@@ -242,6 +242,13 @@ def mirror_points(points, mx, my):
         if 'y' in i['param']:
             i['param']['y'] = -i['param']['y'] if my else i['param']['y']
 
+        if i['cmd']=='A':
+            if i['param']['sweep_flag']== '0':
+                i['param']['sweep_flag']='1'
+            else:
+                i['param']['sweep_flag']='0'
+
+
         # rx ry 只能是正的，代表长度，无需反转??
         # if 'rx' in i['param']:
         #     pass
@@ -390,27 +397,37 @@ class EasyEdaRead:
             if 'type' not in tp:
                 print('unknown type:', tp)
 
-            if tp['type'] not in s_pcb_cmd_list:
+            if self.doc_type=='PCB' or self.doc_type=='PCBLIB':
+                cmd_list = s_pcb_cmd_list
+                print('_package_shape_mirror2 PCB mirror')
+            else:
+                print('_package_shape_mirror2 SCHLIB mirror???\n')
+                cmd_list=s_sch_cmd_list
+
+
+            if tp['type'] not in cmd_list:
                 continue
 
             i = tp['type']
-            keys = s_pcb_cmd_list[i]['key_list']
+            keys = cmd_list[i]['key_list']
             for j in range(len(tp)):
-                if j >= len(s_pcb_cmd_list[i]['key_list']):
+                if j >= len(cmd_list[i]['key_list']):
                     continue
-                ikey = s_pcb_cmd_list[i]['key_list'][j]
-                if s_pcb_cmd_list[i]['is_point_list'][j]:
+                ikey = cmd_list[i]['key_list'][j]
+                if (len(cmd_list[i]['is_point_list'])>j) and cmd_list[i]['is_point_list'][j]:
                     tp[ikey] = mirror_points(tp[ikey], x_mirror, y_mirror)
-                elif s_pcb_cmd_list[i]['key_is_x'][j]:
+                elif len(cmd_list[i]['key_is_x'])>j and  cmd_list[i]['key_is_x'][j]:
                     tp = mirror_val(tp, ikey, x_mirror)
-                elif s_pcb_cmd_list[i]['key_is_y'][j]:
+                elif len(cmd_list[i]['key_is_y'])>j and  cmd_list[i]['key_is_y'][j]:
                     tp = mirror_val(tp, ikey, y_mirror)
+
+
+
+
 
             if i == 'LIB':
                 # 对于lib，镜像需要处理？？？
                 tp['shape'] = self._package_shape_mirror2(tp['shape'], x_mirror, y_mirror)
-                #for ishape in range(len(tp['shape'])):
-                #    tp['shape'][ishape] = self._package_shape_mirror2(tp['shape'][ishape], x_mirror, y_mirror)
 
 
         return shape
@@ -420,9 +437,11 @@ class EasyEdaRead:
             print('file format not known')
             return None
         self.easy_data['dataStr']['shape'] = self._package_shape_mirror2(self.easy_data['dataStr']['shape'],0, 1)
-        #for i in range(len(self.easy_data['dataStr']['shape'])):
-        #    self.easy_data['dataStr']['shape'][i] = self._package_shape_mirror2(self.easy_data['dataStr']['shape'][i],
-        #                                                                        0, 1)
+
+        if self.package_detail is not None:
+            self.package_detail.y_mirror()
+
+
 
     def pin_renumber_all(self):
         for i in self.easy_data['dataStr']['shape']:
