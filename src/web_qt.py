@@ -1,6 +1,5 @@
 import sys
 
-
 from PyQt6.QtCore import QUrl, QEventLoop
 from PyQt6.QtCore import QUrlQuery
 from PyQt6.QtGui import QAction
@@ -145,7 +144,7 @@ class WebGui(QMainWindow):
 
         self.easy_pcb_list.clear()
         self.easy_pcb_lib_list.clear()
-        for index, i in enumerate(decals_list) :
+        for index, i in enumerate(decals_list):
             i = i.strip()
             if len(i) == 0:
                 continue
@@ -153,7 +152,7 @@ class WebGui(QMainWindow):
             print(curr_decal)
             decal_json_data = get_decal_data(curr_decal)
             try:
-                if type(decal_json_data)==type(''):
+                if type(decal_json_data) == type(''):
                     dec1 = json.loads(decal_json_data)
                 else:
                     dec1 = decal_json_data
@@ -173,8 +172,9 @@ class WebGui(QMainWindow):
             easy.y_mirror()
             easy.pin_renumber_all()
             self.easy_pcb_lib_list.append(easy)
-            self.statusbar.showMessage( str(index)+'/'+str(len(decals_list))+
-                '个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data['title'])
+            self.statusbar.showMessage(str(index) + '/' + str(len(decals_list)) +
+                                       '个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data[
+                                           'title'])
             QApplication.processEvents()
         self.on_export()
 
@@ -225,7 +225,7 @@ class WebGui(QMainWindow):
             easy.org_to_zero()
             easy.y_mirror()
             easy.pin_renumber_all()
-            self.statusbar.showMessage('找到一个pcb:' + easy.easy_data['title']+'. 点击export菜单按钮可以导出')
+            self.statusbar.showMessage('找到一个pcb:' + easy.easy_data['title'] + '. 点击export菜单按钮可以导出')
             self.easy_pcb_list.append(easy)
         elif '/api/components/' in qurl.path():
             qurl = qurl
@@ -248,7 +248,8 @@ class WebGui(QMainWindow):
 
             self.easy_pcb_lib_list.append(easy)
             self.statusbar.showMessage(
-                '找到一个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data['title']+'. 点击export菜单按钮可以导出')
+                '找到一个元件:' + easy.easy_data['title'] + ' 封装:' + easy.package_detail.easy_data[
+                    'title'] + '. 点击export菜单按钮可以导出')
 
     def on_export(self):
 
@@ -312,7 +313,6 @@ class WebGui(QMainWindow):
             f.close()
 
         QMessageBox.information(self, 'OK!', 'lib export finish!')
-
 
     def export_one_pcb(self, easy):
         pads = PadsPcbAsciiWrite()

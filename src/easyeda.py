@@ -30,8 +30,7 @@ import sys
 	WAVEFORM:'10'
 """
 
-
-#之前的points都是svg代码。之前只转为了点list，现在改为svg的dict
+# 之前的points都是svg代码。之前只转为了点list，现在改为svg的dict
 s_pcb_cmd_list = {
     'CIRCLE': {'key_list': ['type', 'cx', 'cy', 'r', 'stroke_width', 'layer_id', 'id'],
                'key_to_mil': [0, 1, 1, 1, 1, 0, 0],
@@ -125,22 +124,23 @@ s_pcb_cmd_list = {
 
 }
 
-s_sch_cmd_list={
-    'R': {'key_list': ['type', 'x', 'y', 'rx','ry','width','height' 'stroke_color','stroke_width','stroke_style','fill_color','id','locked'],
-               'key_to_mil': [0, 1, 1, 1, 1, 1, 1,0,0,0,0,0,0],
-               'key_is_x': [0, 1, 0, 0, 0, 0, 0],
-               'key_is_y': [0, 0, 1, 0, 0, 0, 0],
-               'is_point_list': [0, 0, 0, 0, 0, 0, 0],
-            'name':'RECT',
-               },
-    'PL': {'key_list': ['type', 'points', 'stroke_color', 'stroke_width',  'stroke_style',
+s_sch_cmd_list = {
+    'R': {'key_list': ['type', 'x', 'y', 'rx', 'ry', 'width', 'height' 'stroke_color', 'stroke_width', 'stroke_style',
                        'fill_color', 'id', 'locked'],
-          'key_to_mil': [0, 0, 0, 1, 0, 0, 0],
-          'key_is_x': [0, 0, 0, 0, 0, 0, 0],
-          'key_is_y': [0, 0, 0, 0, 0, 0, 0],
-          'is_point_list': [0, 1, 0, 0, 0, 0, 0],
-          'name': 'POLYLINE',
+          'key_to_mil': [0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0],
+          'key_is_x': [0, 1, 0, 0, 0, 0, 0],
+          'key_is_y': [0, 0, 1, 0, 0, 0, 0],
+          'is_point_list': [0, 0, 0, 0, 0, 0, 0],
+          'name': 'RECT',
           },
+    'PL': {'key_list': ['type', 'points', 'stroke_color', 'stroke_width', 'stroke_style',
+                        'fill_color', 'id', 'locked'],
+           'key_to_mil': [0, 0, 0, 1, 0, 0, 0],
+           'key_is_x': [0, 0, 0, 0, 0, 0, 0],
+           'key_is_y': [0, 0, 0, 0, 0, 0, 0],
+           'is_point_list': [0, 1, 0, 0, 0, 0, 0],
+           'name': 'POLYLINE',
+           },
     'PT': {'key_list': ['type', 'path_string', 'stroke_color', 'stroke_width', 'stroke_style',
                         'fill_color', 'id', 'locked'],
            'key_to_mil': [0, 0, 0, 1, 0, 0, 0],
@@ -149,24 +149,24 @@ s_sch_cmd_list={
            'is_point_list': [0, 1, 0, 0, 0, 0, 0],
            'name': 'PATH',
            },
-    'A': {'key_list': ['type', 'path_string', 'help_dots','stroke_color', 'stroke_width', 'stroke_style',
-                        'fill_color', 'id', 'locked'],
-           'key_to_mil': [0, 0, 0, 0, 1, 0, 0],
-           'key_is_x': [0, 0, 0, 0, 0, 0, 0],
-           'key_is_y': [0, 0, 0, 0, 0, 0, 0],
-           'is_point_list': [0, 1, 1, 0, 0, 0, 0],
-           'name': 'ARC',
-           },
-    'PI': {'key_list': ['type', 'path_string', 'help_dots', 'stroke_color', 'stroke_width', 'stroke_style',
+    'A': {'key_list': ['type', 'path_string', 'help_dots', 'stroke_color', 'stroke_width', 'stroke_style',
                        'fill_color', 'id', 'locked'],
           'key_to_mil': [0, 0, 0, 0, 1, 0, 0],
           'key_is_x': [0, 0, 0, 0, 0, 0, 0],
           'key_is_y': [0, 0, 0, 0, 0, 0, 0],
           'is_point_list': [0, 1, 1, 0, 0, 0, 0],
-          'name': 'Pie',
+          'name': 'ARC',
           },
+    'PI': {'key_list': ['type', 'path_string', 'help_dots', 'stroke_color', 'stroke_width', 'stroke_style',
+                        'fill_color', 'id', 'locked'],
+           'key_to_mil': [0, 0, 0, 0, 1, 0, 0],
+           'key_is_x': [0, 0, 0, 0, 0, 0, 0],
+           'key_is_y': [0, 0, 0, 0, 0, 0, 0],
+           'is_point_list': [0, 1, 1, 0, 0, 0, 0],
+           'name': 'Pie',
+           },
     'BE': {'key_list': ['type', 'rotation', 'x', 'y', 'x2', 'y2',
-                         'id', 'locked'],
+                        'id', 'locked'],
            'key_to_mil': [0, 0, 1, 1, 1, 1, 0],
            'key_is_x': [0, 0, 1, 0, 1, 0, 0],
            'key_is_y': [0, 0, 0, 1, 0, 1, 0],
@@ -176,30 +176,30 @@ s_sch_cmd_list={
 
     'I': {'key_list': ['type', 'x', 'y', 'width', 'height', 'rotation',
                        'href',
-                        'id', 'locked'],
-           'key_to_mil': [0, 1, 1, 1, 1, 0, 0],
-           'key_is_x': [0, 1, 0, 0, 0, 0, 0],
-           'key_is_y': [0, 0, 1, 0, 0, 0, 0],
-           'is_point_list': [0, 0, 0, 0, 0, 0, 0],
-           'name': 'Image',
-           },
-    'PG': {'key_list': ['type', 'points','stroke_color', 'stroke_width', 'stroke_style',
-                       'fill_color', 'id', 'locked'],
-          'key_to_mil': [0, 0,0, 1, ],
-          'key_is_x': [0, 0, 0, 0],
-          'key_is_y': [0, 0, 0, 0],
-          'is_point_list': [0, 1, 0, 0],
-          'name': 'Polygon',
+                       'id', 'locked'],
+          'key_to_mil': [0, 1, 1, 1, 1, 0, 0],
+          'key_is_x': [0, 1, 0, 0, 0, 0, 0],
+          'key_is_y': [0, 0, 1, 0, 0, 0, 0],
+          'is_point_list': [0, 0, 0, 0, 0, 0, 0],
+          'name': 'Image',
           },
-    'L': {'key_list': ['type', 'x','y','x2','y2', 'stroke_color', 'stroke_width', 'stroke_style',
+    'PG': {'key_list': ['type', 'points', 'stroke_color', 'stroke_width', 'stroke_style',
                         'fill_color', 'id', 'locked'],
-           'key_to_mil': [0, 1, 1, 1,1,0,1 ],
-           'key_is_x': [0, 1, 0, 1,0],
-           'key_is_y': [0, 0, 1, 0,1],
-           'is_point_list': [0, 0, 0, 0],
-           'name': 'Line',
+           'key_to_mil': [0, 0, 0, 1, ],
+           'key_is_x': [0, 0, 0, 0],
+           'key_is_y': [0, 0, 0, 0],
+           'is_point_list': [0, 1, 0, 0],
+           'name': 'Polygon',
            },
-    'C': {'key_list': ['type', 'x', 'y', 'r',  'stroke_color', 'stroke_width', 'stroke_style',
+    'L': {'key_list': ['type', 'x', 'y', 'x2', 'y2', 'stroke_color', 'stroke_width', 'stroke_style',
+                       'fill_color', 'id', 'locked'],
+          'key_to_mil': [0, 1, 1, 1, 1, 0, 1],
+          'key_is_x': [0, 1, 0, 1, 0],
+          'key_is_y': [0, 0, 1, 0, 1],
+          'is_point_list': [0, 0, 0, 0],
+          'name': 'Line',
+          },
+    'C': {'key_list': ['type', 'x', 'y', 'r', 'stroke_color', 'stroke_width', 'stroke_style',
                        'fill_color', 'id', 'locked'],
           'key_to_mil': [0, 1, 1, 1, 0, 1],
           'key_is_x': [0, 1, 0, 0, 0],
@@ -207,18 +207,17 @@ s_sch_cmd_list={
           'is_point_list': [0, 0, 0, 0],
           'name': 'Circle',
           },
-    'P':{'key_list': ['type', 'display', 'electric', 'pin_number',  'x', 'y', 'rotation',
-                        'id', 'locked'],
+    'P': {'key_list': ['type', 'display', 'electric', 'pin_number', 'x', 'y', 'rotation',
+                       'id', 'locked'],
           'key_to_mil': [0, 0, 0, 0, 1, 1],
-          'key_is_x':   [0, 0, 0, 0, 1,0],
-          'key_is_y':   [0, 0, 0, 0, 0,1],
-          'is_point_list': [0, 0, 0, 0,0,0],
+          'key_is_x': [0, 0, 0, 0, 1, 0],
+          'key_is_y': [0, 0, 0, 0, 0, 1],
+          'is_point_list': [0, 0, 0, 0, 0, 0],
           'name': 'Pin',
           },
 
-
-
 }
+
 
 def shift_val(obj, key, shift_v):
     obj[key] = round(obj[key] + shift_v, 5)
@@ -236,18 +235,17 @@ def mirror_points(points, mx, my):
     svg points mirror
     """
     pts = copy.deepcopy(points)
-    for index, i in enumerate(pts) :
+    for index, i in enumerate(pts):
         if 'x' in i['param']:
             i['param']['x'] = -i['param']['x'] if mx else i['param']['x']
         if 'y' in i['param']:
             i['param']['y'] = -i['param']['y'] if my else i['param']['y']
 
-        if i['cmd']=='A':
-            if i['param']['sweep_flag']== '0':
-                i['param']['sweep_flag']='1'
+        if i['cmd'] == 'A':
+            if i['param']['sweep_flag'] == '0':
+                i['param']['sweep_flag'] = '1'
             else:
-                i['param']['sweep_flag']='0'
-
+                i['param']['sweep_flag'] = '0'
 
         # rx ry 只能是正的，代表长度，无需反转??
         # if 'rx' in i['param']:
@@ -261,9 +259,7 @@ def mirror_points(points, mx, my):
         # if 'ry2' in i['param']:
         #     i['param']['ry2'] = -i['param']['ry2'] if my else i['param']['ry2']
 
-
-
-        #pts.append([-i[0] if mx else i[0], -i[1] if my else i[1]])
+        # pts.append([-i[0] if mx else i[0], -i[1] if my else i[1]])
     return pts
 
 
@@ -288,7 +284,8 @@ def value_to_mil(val):
         sys.exit(0)
     return ff
 
-def parse_svg_cmds(pts_str:str):
+
+def parse_svg_cmds(pts_str: str):
     """
     M 100 100 L 300 100 L 200 300 z
     The M indicates a moveto, the Ls indicate linetos, and the z indicates a closepath
@@ -296,20 +293,19 @@ def parse_svg_cmds(pts_str:str):
     'M4383.6127 3101.618A9.8427 9.8427 0 0 0 4373.77 3111.4607'
     [{'cmd':'M', param:[4383.6127 3101.618]}, {'cmd':'A' 'param':[9.8427 9.8427 0 0 0 4373.77 3111.4607]}]
     """
-    s_svg_cmd={
-        'M':['x','y'], #Moveto
+    s_svg_cmd = {
+        'M': ['x', 'y'],  # Moveto
         'm': ['rx', 'ry'],
-        'L':['x','y'], #LineTo
+        'L': ['x', 'y'],  # LineTo
         'l': ['rx', 'ry'],
-        'z':[], #close
+        'z': [],  # close
         'Z': [],
-        'A':['rx','ry','x_rotation','large_arc_flag','sweep_flag','x','y'], #Arc
+        'A': ['rx', 'ry', 'x_rotation', 'large_arc_flag', 'sweep_flag', 'x', 'y'],  # Arc
         'a': ['rx', 'ry', 'x_rotation', 'large_arc_flag', 'sweep_flag', 'rx2', 'ry2']
     }
 
     def to_cmd(cmd, param):
         return {'cmd': cmd, 'param': dict(zip(s_svg_cmd[cmd], param))}
-
 
     cmds = []
 
@@ -331,12 +327,11 @@ def parse_svg_cmds(pts_str:str):
         elif i in '0123456789.':
             curr_num += i
         elif i in ' ,':
-            if len(curr_num)>0:#FIXME:20220920  M 4115.08 3230.21 -> param:[0,4115.08]
+            if len(curr_num) > 0:  # FIXME:20220920  M 4115.08 3230.21 -> param:[0,4115.08]
                 param.append(curr_num)
             curr_num = ''
         else:
             print('unknown svg cmd: i=', i, pts_str)
-
 
     if cmd is not None:
         if len(curr_num) > 0:
@@ -359,19 +354,19 @@ def point_unit_convert(pts_str):
     :param pts_str:
     :return:
     """
-    pts_str=pts_str.strip()
-    cmds=[]
-    if len(pts_str)>0 and pts_str[0] in '0123456789.':
-        #just points list
+    pts_str = pts_str.strip()
+    cmds = []
+    if len(pts_str) > 0 and pts_str[0] in '0123456789.':
+        # just points list
         pts_list = pts_str.split(' ')
-        for i in range(len(pts_list)//2):
-            cmds.append({'cmd':'M', 'param':{'x':pts_list[i*2],'y':pts_list[i*2+1]}})
+        for i in range(len(pts_list) // 2):
+            cmds.append({'cmd': 'M', 'param': {'x': pts_list[i * 2], 'y': pts_list[i * 2 + 1]}})
     else:
         cmds = parse_svg_cmds(pts_str)
 
     for i in cmds:
         for j in i['param']:
-            if j=='x' or j=='y' or j=='rx' or j=='ry' or j=='rx2' or j=='ry2':
+            if j == 'x' or j == 'y' or j == 'rx' or j == 'ry' or j == 'rx2' or j == 'ry2':
                 i['param'][j] = value_to_mil(i['param'][j])
 
     return cmds
@@ -386,9 +381,9 @@ class EasyEdaWrite:
 
 class EasyEdaRead:
     def __init__(self):
-        self.easy_data=None
-        self.doc_type='unknown' #'SCHLIB', 'PCB' 'PCBLIB' 'SCH'
-        self.package_detail=None
+        self.easy_data = None
+        self.doc_type = 'unknown'  # 'SCHLIB', 'PCB' 'PCBLIB' 'SCH'
+        self.package_detail = None
 
     def _package_shape_mirror2(self, shape, x_mirror, y_mirror):
         for tp in shape:
@@ -397,13 +392,12 @@ class EasyEdaRead:
             if 'type' not in tp:
                 print('unknown type:', tp)
 
-            if self.doc_type=='PCB' or self.doc_type=='PCBLIB':
+            if self.doc_type == 'PCB' or self.doc_type == 'PCBLIB':
                 cmd_list = s_pcb_cmd_list
                 print('_package_shape_mirror2 PCB mirror')
             else:
                 print('_package_shape_mirror2 SCHLIB mirror???\n')
-                cmd_list=s_sch_cmd_list
-
+                cmd_list = s_sch_cmd_list
 
             if tp['type'] not in cmd_list:
                 continue
@@ -414,21 +408,16 @@ class EasyEdaRead:
                 if j >= len(cmd_list[i]['key_list']):
                     continue
                 ikey = cmd_list[i]['key_list'][j]
-                if (len(cmd_list[i]['is_point_list'])>j) and cmd_list[i]['is_point_list'][j]:
+                if (len(cmd_list[i]['is_point_list']) > j) and cmd_list[i]['is_point_list'][j]:
                     tp[ikey] = mirror_points(tp[ikey], x_mirror, y_mirror)
-                elif len(cmd_list[i]['key_is_x'])>j and  cmd_list[i]['key_is_x'][j]:
+                elif len(cmd_list[i]['key_is_x']) > j and cmd_list[i]['key_is_x'][j]:
                     tp = mirror_val(tp, ikey, x_mirror)
-                elif len(cmd_list[i]['key_is_y'])>j and  cmd_list[i]['key_is_y'][j]:
+                elif len(cmd_list[i]['key_is_y']) > j and cmd_list[i]['key_is_y'][j]:
                     tp = mirror_val(tp, ikey, y_mirror)
-
-
-
-
 
             if i == 'LIB':
                 # 对于lib，镜像需要处理？？？
                 tp['shape'] = self._package_shape_mirror2(tp['shape'], x_mirror, y_mirror)
-
 
         return shape
 
@@ -436,12 +425,10 @@ class EasyEdaRead:
         if 'dataStr' not in self.easy_data:
             print('file format not known')
             return None
-        self.easy_data['dataStr']['shape'] = self._package_shape_mirror2(self.easy_data['dataStr']['shape'],0, 1)
+        self.easy_data['dataStr']['shape'] = self._package_shape_mirror2(self.easy_data['dataStr']['shape'], 0, 1)
 
         if self.package_detail is not None:
             self.package_detail.y_mirror()
-
-
 
     def pin_renumber_all(self):
         for i in self.easy_data['dataStr']['shape']:
@@ -501,10 +488,9 @@ class EasyEdaRead:
             if 'points' in ishape:
                 for i in ishape['points']:
                     if 'x' in i['param']:
-                        i['param']['x']-=x
+                        i['param']['x'] -= x
                     if 'y' in i['param']:
                         i['param']['y'] -= y
-
 
             # change format arc
             # if 'c' in ishape:
@@ -537,11 +523,11 @@ class EasyEdaRead:
         pass
 
     def org_to_zero(self):
-        if self.doc_type =='unknown':
+        if self.doc_type == 'unknown':
             return
         if 'BBox' in self.easy_data['dataStr']:
-            x = self.easy_data['dataStr']['BBox']['x'] + self.easy_data['dataStr']['BBox']['width']/2
-            y = self.easy_data['dataStr']['BBox']['y'] + self.easy_data['dataStr']['BBox']['height']/2
+            x = self.easy_data['dataStr']['BBox']['x'] + self.easy_data['dataStr']['BBox']['width'] / 2
+            y = self.easy_data['dataStr']['BBox']['y'] + self.easy_data['dataStr']['BBox']['height'] / 2
         else:
             x = 0
             y = 0
@@ -551,9 +537,7 @@ class EasyEdaRead:
         if self.package_detail is not None:
             self.package_detail.org_to_zero()
 
-
     def parse_json(self, json_data):
-
 
         if type(json_data) == type(''):
             json_data = json.loads(json_data)
@@ -581,32 +565,31 @@ class EasyEdaRead:
         if 'docType' not in json_data:
             return None
 
-        if json_data['docType']==2:
-            #decl??
-            self.doc_type='SCHLIB'
+        if json_data['docType'] == 2:
+            # decl??
+            self.doc_type = 'SCHLIB'
             for i in self.easy_data:
                 self.easy_data[i] = self._parse_kv(i, self.easy_data[i])
 
             if 'packageDetail' in self.easy_data:
-                self.package_detail =EasyEdaRead()
+                self.package_detail = EasyEdaRead()
                 self.package_detail.parse_json(self.easy_data['packageDetail'])
 
 
-        elif json_data['docType']==3:
-            #pcb
-            self.doc_type='PCB'
+        elif json_data['docType'] == 3:
+            # pcb
+            self.doc_type = 'PCB'
             for i in self.easy_data:
                 self.easy_data[i] = self._parse_kv(i, self.easy_data[i])
 
-        elif json_data['docType']==4:
-            #pcb
-            self.doc_type='PCBLIB'
+        elif json_data['docType'] == 4:
+            # pcb
+            self.doc_type = 'PCBLIB'
             for i in self.easy_data:
                 self.easy_data[i] = self._parse_kv(i, self.easy_data[i])
 
         else:
             print('ERROR: unknown doc type ')
-
 
     def _parse_kv(self, key, val):
         # 此处只处理：dataStr->shape dataStr->canvas dataStr->layers dataStr->objects
@@ -745,27 +728,26 @@ class EasyEdaRead:
             return {}
         stri = stri.strip()
         pkt = stri.split('~')
-        if len(pkt)==0:
+        if len(pkt) == 0:
             print('error. _package_shape_str_decode: no shape to decode:', stri)
             return None
 
         cmd_list = None
-        if self.doc_type=='SCHLIB':
+        if self.doc_type == 'SCHLIB':
             if pkt[0] not in s_sch_cmd_list:
                 print('_package_shape_str_decode schlib:unknown cmd:', stri)
                 return {}
             cmd_list = s_sch_cmd_list
-        elif self.doc_type=='PCB':
+        elif self.doc_type == 'PCB':
             if pkt[0] not in s_pcb_cmd_list:
                 print('_package_shape_str_decode:unknown cmd:', stri)
                 return {}
             cmd_list = s_pcb_cmd_list
-        elif self.doc_type=='PCBLIB':
+        elif self.doc_type == 'PCBLIB':
             if pkt[0] not in s_pcb_cmd_list:
                 print('_package_shape_str_decode:unknown cmd:', stri)
                 return {}
             cmd_list = s_pcb_cmd_list
-
 
         i = pkt[0]
         # matched
@@ -773,9 +755,9 @@ class EasyEdaRead:
         decoded = dict(zip(keys, pkt))
         for j in range(len(decoded)):
             ikey = cmd_list[i]['key_list'][j]
-            if len(cmd_list[i]['is_point_list'])>j and cmd_list[i]['is_point_list'][j]:
+            if len(cmd_list[i]['is_point_list']) > j and cmd_list[i]['is_point_list'][j]:
                 decoded[ikey] = point_unit_convert(decoded[ikey])
-            elif len(cmd_list[i]['key_to_mil'])>j and cmd_list[i]['key_to_mil'][j]:
+            elif len(cmd_list[i]['key_to_mil']) > j and cmd_list[i]['key_to_mil'][j]:
                 decoded[ikey] = value_to_mil(decoded[ikey])
 
         if ('type' in decoded) and decoded['type'] == 'LIB':

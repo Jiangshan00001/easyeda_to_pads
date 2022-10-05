@@ -244,7 +244,7 @@ class PadsConvertBase:
         return ret
 
     def _arc_convert_calc(self, x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
-        return arc_convert_calc(x1,y1,x2,y2,rx, ry, x_rotation, large_arc_flag, sweep_flag)
+        return arc_convert_calc(x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag)
 
     def _arc_convert_calc_tmp1(self, x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag):
         # https://www.w3.org/TR/SVG11/paths.html#PathElement
@@ -1073,7 +1073,7 @@ MICROVIA         0.35 3
             if i['type'] != 'LIB':
                 continue
 
-            decl_name = self._limit_decal_name( i['custom']['package'])
+            decl_name = self._limit_decal_name(i['custom']['package'])
             # text中：L(普通) | N(器件名称) | P(器件编号) | PK(彩饰名)
             for j in i['shape']:
                 if j['type'] == 'TEXT' and j['sub_type'] == 'P':
@@ -1137,19 +1137,35 @@ R25.2 RIGHT.2
         return ret
 
     def _collect_net_names(self, dataStr):
+        """
+        生成网表
+        """
         nets = {}
         for i in dataStr['shape']:
             if 'type' not in i:
+                # 空的shape？？
                 continue
             if i['type'] != 'LIB':
+                #只关注元器件，其他不关注
                 continue
+
+            #先找到此元器件的part_name，引用名称
+            part_name = None
             for j in i['shape']:
                 if j['type'] == 'TEXT' and j['sub_type'] == 'P':
-                    part_name = j['text']
+                    part_name =self._limit_part_name( j['text'])
 
+            if part_name is None:
+                #这个元器件么有引用名称，无法建立网表
+                print(' _collect_net_names error. ', i, j)
+                continue
+
+            for j in i['shape']:
                 if j['type'] != 'PAD':
+                    #只关注元器件焊盘脚
                     continue
                 if len(j['net']) == 0:
+                    #如果焊盘脚未连接，则不管
                     continue
                 if j['net'] not in nets:
                     nets[j['net']] = []

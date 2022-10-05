@@ -107,18 +107,18 @@ def arc_convert_calc(x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_f
             center_x + rx, center_y + ry]
 
 
-if __name__=='__main__':
-    #M 125,75 A100,50 0 0,0 225,125
-    test1_param=[125,75,225,125,100,50,0,0,0]
-    test2_param=[125,75,225,125,100,50,0,0,1]
-    test3_param=[125,75,225,125,100,50,0,1,0]
-    test4_param=[125,75,225,125,100,50,0,1,1]
+if __name__ == '__main__':
+    # M 125,75 A100,50 0 0,0 225,125
+    test1_param = [125, 75, 225, 125, 100, 50, 0, 0, 0]
+    test2_param = [125, 75, 225, 125, 100, 50, 0, 0, 1]
+    test3_param = [125, 75, 225, 125, 100, 50, 0, 1, 0]
+    test4_param = [125, 75, 225, 125, 100, 50, 0, 1, 1]
 
-    test_param=[test1_param, test2_param,test3_param, test4_param]
+    test_param = [test1_param, test2_param, test3_param, test4_param]
     for i in test_param:
-        #x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag
-        x1,y1,start_angle, angle_delta, conerx1,conery1,conerx2,conery2 =arc_convert_calc(*i)
-        print(x1,y1,start_angle, angle_delta, conerx1,conery1,conerx2,conery2)
-        print('centerxy:', (conerx1+conerx2)/2,(conery1+conery2)/2 )
+        # x1, y1, x2, y2, rx, ry, x_rotation, large_arc_flag, sweep_flag
+        x1, y1, start_angle, angle_delta, conerx1, conery1, conerx2, conery2 = arc_convert_calc(*i)
+        print(x1, y1, start_angle, angle_delta, conerx1, conery1, conerx2, conery2)
+        print('centerxy:', (conerx1 + conerx2) / 2, (conery1 + conery2) / 2)
         print('start angle:', start_angle)
         print('angle_delta:', angle_delta)
