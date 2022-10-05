@@ -21,6 +21,27 @@ pip3 install -r requirements.txt
   
 ```
 
+
+```
+1 安装依赖包:
+pip3 install -r requirements.txt
+
+2 运行脚本  web_qt.py
+3 打开对应pcb项目，状态栏会看到有提示。登录并查找元件，点击元件，会看到提示可导出的元件.
+4 点击 导出 按钮.
+5 保存相应的pcb项目，元件封装d/p 文件.
+  
+```
+```
+如果登录过，并查找过元件库，则：
+1 batch功能，点击 batch按钮，选择文件 db/SMD_RCLD.txt，系统会自动将文件中的封装下载转换，并导出。
+  自动弹出保存对话框，保存问 .d /.p 文件。
+2 可以自行编辑txt文件，格式是每个封装一行
+
+  
+```
+
+
 ![web-qt](/doc/web_qt2.png)
 
 
@@ -41,18 +62,6 @@ pip3 install -r requirements.txt
 
 
 
-
-
-
-how to use the converted files:
-
-```
-1 in pads, click File-library select a library.
-2 select Decals and click import button. select the files with .d.
-3 select Parts and click import button. select the files with .p.
-```
-
-NOTE:import one file to one library file. do not import all file into one library as the library has a component limit.
 
 
 more info see:

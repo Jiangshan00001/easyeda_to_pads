@@ -558,6 +558,9 @@ class EasyEdaRead:
         if type(json_data) == type(''):
             json_data = json.loads(json_data)
 
+        if json_data is None:
+            return
+
         if 'result' in json_data:
             json_data = json_data['result']
 

@@ -31,14 +31,28 @@ def sort_comp(ls, decal_name):
     ls_not_match=[]
     # 按照是否完全一致进行排序
     for i in ls_lcsc:
-        if i['title'].upper()==decal_name.upper():
+        if ('packageDetail' in i) and (i['packageDetail']['title'].upper()==decal_name.upper()):
             ls_match.append(i)
     for i in ls_other:
-        if i['title'].upper() == decal_name.upper():
+        if ('packageDetail' in i) and (i['packageDetail']['title'].upper() == decal_name.upper()):
             ls_match.append(i)
 
     if len(ls_match)>0:
         return ls_match
+
+    for i in ls_lcsc:
+        if ('packageDetail' in i) and ( decal_name.upper() in i['packageDetail']['title'].upper()):
+            ls_match.append(i)
+    for i in ls_other:
+        if ('packageDetail' in i) and (decal_name.upper() in i['packageDetail']['title'].upper()):
+            ls_match.append(i)
+
+    if len(ls_match)>0:
+        return ls_match
+
+
+
+
 
     # 没有完全一致的，找内部包含的
     for i in ls_lcsc:
